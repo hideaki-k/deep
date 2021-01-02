@@ -15,7 +15,7 @@ import numpy
 from . import step_func
 
 class SNU(nn.Module):
-    def __init__(self, n_in, n_out, l_tau=0.8, soft=False, rec=False, nobias=False, initial_bias=-2.5, gpu=True):
+    def __init__(self, n_in, n_out, l_tau=0.8, soft=False, rec=False, nobias=False, initial_bias=-1.0, gpu=True):
         super(SNU,self).__init__()
         
         self.n_out = n_out
@@ -35,6 +35,10 @@ class SNU(nn.Module):
             dtype = torch.float
             device=torch.device("cpu")
         
+        #self.w1 = torch.empty((n_in, n_out),  device=device, dtype=dtype, requires_grad=True)
+        #torch.nn.init.normal_(self.w1, mean=0.0)
+        
+        #self.Wx = torch.einsum("abc,cd->abd", (x_data, w1))
         self.Wx = nn.Linear(n_in, n_out, bias=False).to(device)
         #nn.init.uniform_(self.Wx.weight, -0.1, 0.1) #3.0
         torch.nn.init.xavier_uniform_(self.Wx.weight)
@@ -46,11 +50,11 @@ class SNU(nn.Module):
             self.b = None
         else:
 
-            print("initial_bias",initial_bias)
+            #print("initial_bias",initial_bias)
             device = torch.device(device)
             
             self.b = nn.Parameter(torch.Tensor([initial_bias]).to(device))
-            print("self.b",self.b)
+            #print("self.b",self.b)
                 
             
 
@@ -84,8 +88,7 @@ class SNU(nn.Module):
 
         if type(self.s) == numpy.ndarray:
             self.s = torch.from_numpy(self.s.astype(np.float32)).clone()
-        
-        print("===========================")
+    
         #print("x in snu:",x) 
         #print("x in snu.shape",x.shape) #x in snu.shape torch.Size([256, 784])
         #print("self.Wx(x)",type(self.Wx(x)))
@@ -93,7 +96,9 @@ class SNU(nn.Module):
         #print("self.Wx(x).shape",self.Wx(x).shape)
         #print( " self.l_tau * self.s * (1-self.y)):",self.l_tau * self.s * (1-self.y))
         #print("self.Wx(x):",self.Wx(x))
-    
+        
+        #out = torch.einsum("abc,cd->abd", (x, self.w1))
+        #print("out:",out)
         s = F.elu(abs(self.Wx(x)) + self.l_tau * self.s * (1-self.y))
         #print("s : ",s)
 
@@ -107,12 +112,12 @@ class SNU(nn.Module):
         else:
             axis = 0
 
-            print("s.shape:", s.shape)
-            print("self.b.shape:", self.b.shape)
+            #print("s.shape:", s.shape)
+            #print("self.b.shape:", self.b.shape)
             #print("self.initial_bias.shape:",self.initial_bias.shape)
-            print("self.b.shape !!!!!!!!!!!!!!!! ", self.b[(...,) + (None,) * (s.ndim - self.b.ndim - axis)].shape)
+            #print("self.b.shape !!!!!!!!!!!!!!!! ", self.b[(...,) + (None,) * (s.ndim - self.b.ndim - axis)].shape)
             bias = s + self.b[(...,) + (None,) * (s.ndim - self.b.ndim - axis)] #error!! two types
-            print("bias:",bias)
+            #print("bias:",bias)
             #print("s in snu:",s)
             bias = s + self.b
             #bias = s + self.initial_bias

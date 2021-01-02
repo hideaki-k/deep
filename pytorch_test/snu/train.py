@@ -74,50 +74,89 @@ class TestLoadDataset(torch.utils.data.Dataset):
     return self.x_[i], self.y_[i]
 
 def main():
-  train_dataset = TrainLoadDataset(N=600, dt=1e-3, num_time=100, max_fr=60)
-  test_dataset = TestLoadDataset(N=200, dt=1e-3, num_time=100, max_fr=60)
+  train_dataset = TrainLoadDataset(N=15360, dt=1e-3, num_time=100, max_fr=700)
+  test_dataset = TestLoadDataset(N=2560, dt=1e-3, num_time=100, max_fr=700)
   # plot debig
   data_id = 2
   print(np.array(train_dataset[data_id][0]).shape)
   sum = np.sum(train_dataset[data_id][0],axis=1)
+  """
   fig = plt.figure(figsize=(6,3))
   ax1 = fig.add_subplot(1,2,1)
   ax1.imshow(np.reshape(sum,(28,28)))
   ax2 = fig.add_subplot(1,2,2)
   ax2.imshow(np.reshape(train_dataset[data_id][0][:,0],(28,28)))
   plt.show()
+  """
 
-  train_iter = DataLoader(train_dataset, batch_size=64, shuffle=True)
-  test_iter = DataLoader(test_dataset, batch_size=64, shuffle=True)
+  train_iter = DataLoader(train_dataset, batch_size=256, shuffle=True)
+  test_iter = DataLoader(test_dataset, batch_size=256, shuffle=True)
   #plt.imshow(np.reshape(dataset[1][0][:,0],(28,28)))
   print("building model")
   device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
   model = network.SNU_Network(n_in=784, n_mid=256, n_out=10, num_time=10, gpu=True)
   model = model.to(device)
   optimizer = optim.Adam(model.parameters(), lr=1e-4)
-  epochs = 10
+  epochs = 100
+  loss_hist = []
+  acc_hist = []
   for epoch in range(epochs):
     running_loss = 0.0
+    local_loss = []
+    acc = []
     for i,(inputs, labels) in enumerate(train_iter, 0):
       # zero the paramerter gradients
       optimizer.zero_grad()
       # forward + backward + optimize
       inputs = inputs.to(device)
+      labels = labels.to(device,dtype=torch.int64)
       #print("inputs shape:",inputs.shape)
-      print("inputs:",inputs.device)
-      print("labels shape:",labels.shape)
-      print("type labels:",type(labels))
-      loss = model(inputs,labels)
+      #print("inputs shape:",inputs.shape)
+      #print("labels shape:",labels)
+      #print("type labels:",labels.device)
+      loss , pred= model(inputs,labels)
+      print("loss:",loss)
+      print("pred :",pred.shape)
+      print("labels:",labels.shape)
+
+      pred,_ = torch.max(pred,1)
+      
+      print("_ : ",_)
+      tmp = np.mean((_==labels).detach().cpu().numpy())
+      acc.append(tmp)
+      
+      
+
+
       loss.backward()
       optimizer.step()
 
       # print statistics
       running_loss += loss.item()
+      local_loss.append(loss.item())
       if i % 100 == 99:
         print('[{:d}, {:5d}] loss: {:.3f}'
                     .format(epoch + 1, i + 1, running_loss / 100))
         running_loss = 0.0
+    mean_acc = np.mean(acc)
+    mean_loss = np.mean(local_loss)
+    loss_hist.append(mean_loss)
+    acc_hist.append(mean_acc)
+    
+  plt.figure(figsize=(3.3,2),dpi=150)
+  plt.plot(loss_hist)
+  plt.xlabel("epoch")
+  plt.ylabel("Loss")
+  plt.show()
   print("finish")
+  
+  plt.figure(figsize=(3.3,2),dpi=150)
+  plt.plot(acc_hist)
+  plt.xlabel("epoch")
+  plt.ylabel("acc")
+  plt.show()
+  print("finish")
+
 if __name__ == '__main__':
     main()
 

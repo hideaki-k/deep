@@ -32,7 +32,7 @@ class SNU_Network(torch.nn.Module):
         
     def forward(self, x, y):
         loss = None
-        accuracy = None
+        correct = 0
         sum_out = None
         dtype = torch.float
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -51,9 +51,11 @@ class SNU_Network(torch.nn.Module):
         for t in range(self.num_time):
             print("**********************")
             print("t :",t)
-            x_t = x[:,t]  #torch.Size([256, 784])
-            print("x_t[0].shape",x_t[0].shape)
-            print("x_t[0]",x_t[0])
+            print("x[0]  shape:",x[0].shape)
+            x_t = x[:,:,t]  #torch.Size([256, 784])
+            #print("x_t[0]",x_t[0])
+            #print("x_t[0]",x_t[0])
+           
             h1 = self.l1(x_t) # torch.Size([256, 256])
 
             h2 = self.l2(h1) #h2.shape: torch.Size([256, 256])
@@ -61,7 +63,7 @@ class SNU_Network(torch.nn.Module):
             h3 = self.l3(h2)
 
             out = self.l4(h3) #out.shape torch.Size([256, 10]) # [バッチサイズ,output.shape]
-            print("out[0].shape",out[0].shape) #out[0].shape torch.Size([10])
+            print("out.shape",out.shape) #out[0].shape torch.Size([10])
             print("out[0]:",out[0])  #tensor([1., 0., 1., 0., 1., 0., 1., 1., 0., 1.], device='cuda:0',
 
             
@@ -73,7 +75,7 @@ class SNU_Network(torch.nn.Module):
             
             #sum_out = out if sum_out is None else sum_out + out
             out_rec.append(out)
-        print("///////////////////////")
+    
         out_rec = torch.stack(out_rec,dim=1)
         print("out_rec.shape",out_rec.shape) #out_rec.shape torch.Size([256, 11, 10]) ([バッチ,時間,分類])
         #m,_=torch.sum(out_rec,1)
@@ -83,7 +85,7 @@ class SNU_Network(torch.nn.Module):
         
         print("out_rec.shape",out_rec.shape)
         print("y.shape",y.shape)
-        
+
 
         print("///////////////////////")
         criterion = nn.CrossEntropyLoss()
