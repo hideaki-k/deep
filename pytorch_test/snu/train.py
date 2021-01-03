@@ -74,7 +74,7 @@ class TestLoadDataset(torch.utils.data.Dataset):
     return self.x_[i], self.y_[i]
 
 def main():
-  train_dataset = TrainLoadDataset(N=15360, dt=1e-3, num_time=100, max_fr=700)
+  train_dataset = TrainLoadDataset(N=25600, dt=1e-3, num_time=100, max_fr=700)
   test_dataset = TestLoadDataset(N=2560, dt=1e-3, num_time=100, max_fr=700)
   # plot debig
   data_id = 2

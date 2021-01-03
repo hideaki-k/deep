@@ -90,9 +90,9 @@ class SNU_Network(torch.nn.Module):
         print("///////////////////////")
         criterion = nn.CrossEntropyLoss()
         loss = criterion(m, y)
-        #print("loss",loss)
-        #loss += self.gamma*torch.sum(sum_out**2)
-        #print("gamma loss",loss)
+        print("loss",loss)
+        loss += self.gamma*torch.sum(m**2)
+        print("gamma loss",loss)
         
         
 
