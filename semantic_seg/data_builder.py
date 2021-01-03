@@ -1,9 +1,12 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
+import torchvision
 from torch import nn, optim
 from torch.nn import functional as F
 from torch.utils.data import TensorDataset, DataLoader
+import os 
+from tqdm import tqdm
 
 def rectangle(img, img_ano, centers, max_side):
     """
@@ -38,8 +41,11 @@ def rectangle(img, img_ano, centers, max_side):
 
 num_images = 1000 #生成する画像数
 length = 64       #画像のサイズ
-imgs = np.zeros([num_images, 1, length, length]) #ゼロ行列を生成、入力画像
-imgs_ano = np.zeros([num_images, 1, length, length]) # 出力画像
+#imgs = np.zeros([num_images, 1, length, length]) #ゼロ行列を生成、入力画像
+#imgs_ano = np.zeros([num_images, 1, length, length]) # 出力画像
+imgs = np.zeros([num_images, length, length]) #ゼロ行列を生成、入力画像
+imgs_ano = np.zeros([num_images, length, length]) # 出力画像
+
 
 for i in range(num_images):
     centers = []
@@ -49,101 +55,52 @@ for i in range(num_images):
         img, img_ano, centers = rectangle(img, img_ano, centers, 12)
     #plt.imshow(img_ano)
     #plt.show()
-    imgs[i, 0, :, :] = img
-    imgs_ano[i, 0, :, :] = img_ano
+    imgs[i, :, :] = img
+    imgs_ano[i, :, :] = img_ano
 
-imgs = torch.tensor(imgs, dtype=torch.float32)
+N = 1000
+num_time = 100
+max_fr = 300
+dt = 1e-3
+
+imgs = torch.tensor(imgs, dtype=torch.float32)    # imgs = torch.Size([1000, 1, 64, 64]) -> imgs :  torch.Size([1000, 64, 64])
 imgs_ano = torch.tensor(imgs_ano, dtype=torch.float32)
+
+
+imgs = imgs.reshape(imgs.shape[0],-1)/255
+imgs_ano = imgs_ano.reshape(imgs_ano.shape[0],-1)/255
+
+
 data_set = TensorDataset(imgs, imgs_ano)
 data_loader = DataLoader(data_set, batch_size = 100, shuffle = True)
 
-print("imgs : ", imgs.shape)
+print("imgs : ", imgs.shape) # imgs = torch.Size([1000, 1, 64, 64])
 print("data_set : ",data_set)
 
 
-class ConvAutoencoder(nn.Module):
-    def __init__(self):
-        super(ConvAutoencoder, self).__init__()
-        #Encoder Layers
-        self.conv1 = nn.Conv2d(in_channels = 1,
-                               out_channels = 16,
-                               kernel_size = 3,
-                               padding = 1)
-        self.conv2 = nn.Conv2d(in_channels = 16,
-                               out_channels = 4,
-                               kernel_size = 3,
-                               padding = 1)
-        #Decoder Layers
-        self.t_conv1 = nn.ConvTranspose2d(in_channels = 4, out_channels = 16,
-                                          kernel_size = 2, stride = 2)
-        self.t_conv2 = nn.ConvTranspose2d(in_channels = 16, out_channels = 1,
-                                          kernel_size = 2, stride = 2)
-        self.relu = nn.ReLU()
-        self.pool = nn.MaxPool2d(2, 2)
-        self.sigmoid = nn.Sigmoid()
-
-    def forward(self, x):
-        #encode#                           
-        x = self.relu(self.conv1(x))        
-        x = self.pool(x)                  
-        x = self.relu(self.conv2(x))      
-        x = self.pool(x)                  
-        #decode#
-        x = self.relu(self.t_conv1(x))    
-        x = self.sigmoid(self.t_conv2(x))
-        return x
-
-#******ネットワークを選択******
-net = ConvAutoencoder()
-loss_fn =nn.MSELoss()
-optimizer = optim.Adam(net.parameters(), lr = 0.01)
-
-losses = []
-epoch_time = 30
-
-for epoch in range(epoch_time):
-    running_loss = 0.0
-    net.train()
-    for i, (XX, yy) in enumerate(data_loader):
-        optimizer.zero_grad()
-        y_pred = net(XX)
-        loss = loss_fn(y_pred, yy)
-        loss.backward()
-        optimizer.step()
-        running_loss += loss.item()
-    print("epoch:","loss:",running_loss/(i + 1))
-    losses.append(running_loss/(i + 1))
-#lossの可視化
-plt.plot(losses)
-plt.ylabel("loss")
-plt.xlabel("epoch time")
-plt.savefig("loss_auto")
+imgs_binary = np.heaviside(imgs[2],0)
+plt.imshow(imgs_binary.reshape(64,64))
 plt.show()
+x = np.zeros((N,4096,num_time))
+y = np.zeros((N,4096))
 
-net.eval() # 評価モード
-#今まで学習していない画像を一つ生成
-num_images = 1
-img_test = np.zeros([num_images, 1, length, length])
-imgs_test_ano = np.zeros([num_images, 1, length, length])
-for i in range(num_images):
-    centers = []
-    img = np.zeros([length, length])
-    img_ano = np.zeros([length, length])
-    for j in range(6):
-        img, img_ano, centers = rectangle(img, img_ano, centers,7)
-    img_test[i, 0, :, :,] = img
 
-img_test = img_test.reshape([1, 1, 64, 64])
-img_test = torch.tensor(img_test, dtype=torch.float32)
-img_test = net(img_test)
-img_test = img_test.detach().numpy()
-img_test = img_test[0, 0, :, :]
+for i in tqdm(range(N)):
+    fr = max_fr * np.repeat(np.expand_dims(np.heaviside(imgs[i],[0]),1),num_time,axis=1)
+    x[i] = np.where(np.random.rand(4096, num_time) < fr*dt, 1, 0)
+    y[i] = imgs_ano[i]
 
-plt.imshow(img, cmap="gray") # input データの可視化
-plt.savefig("input_auto")
+x = x.astype(np.float32)
+y = y.astype(np.float32)
+
+data_id = 2
+print("x shape:",x.shape)
+print(np.array(x[data_id].shape)) #[4096  100]
+sum = np.sum(x[data_id],axis=1)
+
+fig = plt.figure(figsize=(6,3))
+ax1 = fig.add_subplot(1,2,1)
+ax1.imshow(np.reshape(sum,(64,64)))
+ax2 = fig.add_subplot(1,2,2)
+ax2.imshow(np.reshape(x[data_id][:,0],(64,64)))
 plt.show()
-plt.imshow(img_test, cmap="gray") #outputデータの可視化
-plt.show()
-plt.imshow(img_ano, cmap="gray") # 正解データの可視化
-plt.savefig("correct_auto") # 正解データ
-plt.plot()
