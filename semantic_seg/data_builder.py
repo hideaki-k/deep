@@ -104,3 +104,35 @@ ax1.imshow(np.reshape(sum,(64,64)))
 ax2 = fig.add_subplot(1,2,2)
 ax2.imshow(np.reshape(x[data_id][:,0],(64,64)))
 plt.show()
+
+"""動画生成
+
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+import cv2
+OUT_FILE_NAME = "build_img/output_video.mp4"
+#OUT_FILE_NAME = "output_video.avi"
+fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+dst = cv2.imread('build_img/image.png') #一度、savefigしてから再読み込み
+rows,cols,channels = dst.shape
+out = cv2.VideoWriter(OUT_FILE_NAME, int(fourcc), int(10), (int(cols), int(rows)))
+fig = plt.figure()
+ims = []
+
+for i in range(num_time):
+  print(x[data_id][:,i].reshape(64,64).shape)
+  im=plt.imshow(x[data_id][:,i].reshape(64,64), cmap=plt.cm.gray_r,animated=True)
+  ims.append([im])
+  #plt.show("im",im)
+  print(ims)
+  ani = animation.ArtistAnimation(fig, ims, interval=100)
+  fig1=plt.pause(0.001)
+  #Gifアニメーションのために画像をためます
+  plt.savefig("build_img/image"+str(i)+".png")
+  dst = cv2.imread("build_img/image"+str(i)+'.png')
+  out.write(dst) #mp4やaviに出力します
+  print(i)
+
+"""
+
