@@ -78,7 +78,8 @@ def main():
   test_dataset = TestLoadDataset(N=2560, dt=1e-3, num_time=100, max_fr=700)
   # plot debig
   data_id = 2
-  print(np.array(train_dataset[data_id][0]).shape)
+  print("***************************==============")
+  print(np.array(train_dataset[data_id][0]).shape) #(784, 100) 
   sum = np.sum(train_dataset[data_id][0],axis=1)
   """
   fig = plt.figure(figsize=(6,3))
