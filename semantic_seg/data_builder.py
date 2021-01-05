@@ -7,18 +7,22 @@ from torch.nn import functional as F
 from torch.utils.data import TensorDataset, DataLoader
 import os 
 from tqdm import tqdm
-from rectangle_builder import rectangle
-
-
+from rectangle_builder import rectangle,test_img
+import sys
+sys.path.append(r"C:\Users\aki\Documents\GitHub\deep\pytorch_test\snu")
+from model import snu_layer
+from model import network
+from tqdm import tqdm
+from mp4_rec import record
 class TrainLoadDataset(torch.utils.data.Dataset):
     def __init__(self, N=1000, dt=1e-3, num_time=100, max_fr=300):
-        num_images = 1000 #生成する画像数
+        num_images = N #生成する画像数
         length = 64       #画像のサイズ
         
         self.N = N
         num_time = num_time 
-        max_fr = 300
-        dt = 1e-3
+        max_fr = max_fr
+        dt = dt
         #imgs = np.zeros([num_images, 1, length, length]) #ゼロ行列を生成、入力画像
         #imgs_ano = np.zeros([num_images, 1, length, length]) # 出力画像
         imgs = np.zeros([num_images, length, length]) #ゼロ行列を生成、入力画像
@@ -46,7 +50,7 @@ class TrainLoadDataset(torch.utils.data.Dataset):
 
 
         data_set = TensorDataset(imgs, imgs_ano)
-        data_loader = DataLoader(data_set, batch_size = 100, shuffle = True)
+        data_loader = DataLoader(data_set, batch_size = 256, shuffle = True)
 
         print("imgs : ", imgs.shape) # imgs = torch.Size([1000, 1, 64, 64])
         print("data_set : ",data_set)
@@ -87,16 +91,88 @@ class TrainLoadDataset(torch.utils.data.Dataset):
         return self.x[i], self.y[i]    
 
 
-train_dataset = TrainLoadDataset(N=100, dt=1e-3, num_time=100, max_fr=300)
+train_dataset = TrainLoadDataset(N=2560, dt=1e-3, num_time=10, max_fr=300)
 data_id = 2
 print("***************************==============")
 print(np.array(train_dataset[data_id][0]).shape) #(784, 100) 
 train_iter = DataLoader(train_dataset, batch_size=256, shuffle=True)
 
+# ネットワーク設計
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+model = network.SNU_Network(n_in=4096, n_mid=4096, n_out=4096, num_time=10, gpu=True)
+model = model.to(device)
+print("building model")
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
+epochs = 100
+loss_hist = []
+acc_hist = []
+for epoch in range(epochs):
+    running_loss = 0.0
+    local_loss = []
+    acc = []
 
-for i,(inputs, labels) in enumerate(train_iter, 0):
-    print("inputs:",inputs.shape)
-    print("labels:",labels.shape)
+    for i,(inputs, labels) in enumerate(train_iter, 0):
+        optimizer.zero_grad()
+        inputs = inputs.to(device)
+        #labels = labels.to(device,dtype=torch.long)
+        labels = labels.to(device)
+        loss, pred, _ = model(inputs, labels)
+        print("loss : ",loss)
+        print("pred :",pred.shape)
+        print("labels:",labels.shape)
+
+        pred,_ = torch.max(pred,1)
+        #tmp = np.mean((_==labels).detach().cpu().numpy())
+        #acc.append(tmp)  
+        loss.backward()
+        optimizer.step()
+
+        # print statistics
+        running_loss += loss.item()
+        local_loss.append(loss.item())
+        if i % 100 == 99:
+            print('[{:d}, {:5d}] loss: {:.3f}'
+                        .format(epoch + 1, i + 1, running_loss / 100))
+            running_loss = 0.0
+    #mean_acc = np.mean(acc)
+    #acc_hist.append(mean_acc)
+    mean_loss = np.mean(local_loss)
+    loss_hist.append(mean_loss)
+
+    
+plt.figure(figsize=(3.3,2),dpi=150)
+plt.plot(loss_hist)
+plt.xlabel("epoch")
+plt.ylabel("Loss")
+plt.show()
+print("finish")
+
+model.eval()            #評価モード
+inputs_, label_ = test_img()
+inputs_ = inputs_.to(device)
+label_ = label_.to(device)
+print("inputs_",inputs_.shape)
+print("label_",label_.shape)
+label, pred, result = model(inputs_, label_)
+print("result shape :",result.shape)
+
+device2 = torch.device('cpu')
+result = result.to(device2)
+result = result.detach().clone().numpy()
+# MP4  レコード
+record(result)
+
+
+
+"""
+plt.figure(figsize=(3.3,2),dpi=150)
+plt.plot(acc_hist)
+plt.xlabel("epoch")
+plt.ylabel("acc")
+plt.show()
+print("finish")
+"""
+
 
 
 
