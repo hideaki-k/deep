@@ -88,7 +88,9 @@ class SNU_Network(torch.nn.Module):
 
 
         print("///////////////////////")
-        criterion = nn.CrossEntropyLoss()
+        #criterion = nn.CrossEntropyLoss() #MNIST 
+        criterion = nn.MSELoss() # semantic segmantation
+         
         loss = criterion(m, y)
         print("loss",loss)
         loss += self.gamma*torch.sum(m**2)
@@ -100,4 +102,4 @@ class SNU_Network(torch.nn.Module):
         if self.test_mode == True:
             return loss, accuracy, h1_list, h2_list, h3_list, out_list
         else:
-            return loss, m
+            return loss, m, out_rec
