@@ -1,4 +1,8 @@
 import numpy as np
+import torch
+from torch.utils.data import TensorDataset, DataLoader
+import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 def rectangle(img, img_ano, centers, max_side):
     """
@@ -30,3 +34,72 @@ def rectangle(img, img_ano, centers, max_side):
     img_ano[x - side_x : x + side_x + 1, y - side_y : y + side_y + 1] = 1.0
     centers.append([x, y])
     return img, img_ano, centers
+
+
+def test_img(num_images=256, length=64, num_time=10, N=256, max_fr=300, dt = 1e-3):
+
+
+    #img_test = np.zeros([num_images, 1, length, length])
+    #imgs_test_ano = np.zeros([num_images, 1, length, length])
+    imgs = np.zeros([num_images, length, length]) #ゼロ行列を生成、入力画像
+    imgs_ano = np.zeros([num_images, length, length]) # 出力画像
+
+    for i in range(num_images):
+        centers = []
+        img = np.zeros([length, length])
+        img_ano = np.zeros([length, length])
+        for j in range(6):
+            img, img_ano, centers = rectangle(img, img_ano, centers, 7)
+        #img_test[i, 0, :, :] = img
+        imgs[i, :, :] = img
+        imgs_ano[i, :, :] = img_ano
+
+    imgs = torch.tensor(imgs, dtype=torch.float32)    # imgs = torch.Size([1000, 1, 64, 64]) -> imgs :  torch.Size([1000, 64, 64])
+    imgs_ano = torch.tensor(imgs_ano, dtype=torch.float32)
+
+
+    imgs = imgs.reshape(imgs.shape[0],-1)/255
+    imgs_ano = imgs_ano.reshape(imgs_ano.shape[0],-1)/255
+
+
+    #data_set = TensorDataset(imgs, imgs_ano)
+    #data_loader = DataLoader(data_set, batch_size = 256, shuffle = True)
+
+    #print("imgs : ", imgs.shape) # imgs = torch.Size([1000, 1, 64, 64])
+    #print("data_set : ",data_set)
+
+    """
+    imgs_binary = np.heaviside(imgs[0],0)
+    plt.imshow(imgs_binary.reshape(64,64))
+    plt.show()
+    """
+    x = np.zeros((N,4096,num_time))
+    y = np.zeros((N,4096))
+
+    for i in tqdm(range(N)):
+        fr = max_fr * np.repeat(np.expand_dims(np.heaviside(imgs[i],[0]),1),num_time,axis=1)
+        x[i] = np.where(np.random.rand(4096, num_time) < fr*dt, 1, 0)
+        y[i] = imgs_ano[i]
+
+    data_id = 0
+    print("x shape:",x.shape)
+    print(np.array(x[data_id].shape)) #[4096  100]
+    sum = np.sum(x[data_id],axis=1)
+    """
+    fig = plt.figure(figsize=(6,3))
+    ax1 = fig.add_subplot(1,2,1)
+    ax1.imshow(np.reshape(sum,(64,64)))
+    ax2 = fig.add_subplot(1,2,2)
+    ax2.imshow(np.reshape(x[data_id][:,0],(64,64)))
+    plt.show()
+    """
+    x = torch.from_numpy(x.astype(np.float32)).clone()
+    y = torch.from_numpy(y.astype(np.float32)).clone()
+    return x, y
+
+
+
+if __name__ == '__main__':
+    inputs, label = test_img()
+    print("inputs shape : ",inputs)
+    print("label shape : ",label)
