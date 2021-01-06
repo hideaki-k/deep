@@ -13,9 +13,9 @@ sys.path.append(r"C:\Users\aki\Documents\GitHub\deep\pytorch_test\snu")
 from model import snu_layer
 from model import network
 from tqdm import tqdm
-from mp4_rec import record
+from mp4_rec import record, rectangle_record
 class TrainLoadDataset(torch.utils.data.Dataset):
-    def __init__(self, N=1000, dt=1e-3, num_time=100, max_fr=300):
+    def __init__(self, N=1000, dt=1e-3, num_time=100, max_fr=1000):
         num_images = N #生成する画像数
         length = 64       #画像のサイズ
         
@@ -34,7 +34,7 @@ class TrainLoadDataset(torch.utils.data.Dataset):
             img = np.zeros([64, 64])
             img_ano = np.zeros([64, 64])
             for j in range(6):
-                img, img_ano, centers = rectangle(img, img_ano, centers, 12)
+                img, img_ano, centers = rectangle(img, img_ano, centers, 24)
             #plt.imshow(img_ano)
             #plt.show()
             imgs[i, :, :] = img
@@ -82,6 +82,8 @@ class TrainLoadDataset(torch.utils.data.Dataset):
         ax2 = fig.add_subplot(1,2,2)
         ax2.imshow(np.reshape(self.x[data_id][:,0],(64,64)))
         plt.show()
+        print("x shape :" ,x.shape)
+        rectangle_record(x)
 
     
     def __len__(self):
@@ -99,7 +101,7 @@ train_iter = DataLoader(train_dataset, batch_size=256, shuffle=True)
 
 # ネットワーク設計
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-model = network.SNU_Network(n_in=4096, n_mid=4096, n_out=4096, num_time=10, gpu=True)
+model = network.SNU_Network(n_in=4096, n_mid=4096, n_out=4096, num_time=10, initial_bias=-0.5,gpu=True)
 model = model.to(device)
 print("building model")
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
