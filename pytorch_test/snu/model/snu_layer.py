@@ -15,7 +15,7 @@ import numpy
 from . import step_func
 
 class SNU(nn.Module):
-    def __init__(self, n_in, n_out, l_tau=0.8, soft=False, rec=False, nobias=False, initial_bias=-1.0, gpu=True):
+    def __init__(self, n_in, n_out, l_tau=0.8, soft=False, rec=False, nobias=False, initial_bias=-0.45, gpu=True):
         super(SNU,self).__init__()
         
         self.n_out = n_out

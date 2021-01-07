@@ -61,11 +61,11 @@ class SNU_Network(torch.nn.Module):
            
             h1 = self.l1(x_t) # torch.Size([256, 256])
 
-            print("sum h1[0]",sum(h1[0]))
+            #print("sum h1[0]",sum(h1[0]))
             h2 = self.l2(h1) #h2.shape: torch.Size([256, 256])
-            print("sum h2[0]",sum(h2[0]))
+            #print("sum h2[0]",sum(h2[0]))
             h3 = self.l3(h2)
-            print("sum h3[0]",sum(h3[0]))
+            #print("sum h3[0]",sum(h3[0]))
             out = self.l4(h3) #out.shape torch.Size([256, 10]) # [バッチサイズ,output.shape]
             print("out.shape",out.shape) #out[0].shape torch.Size([10])
             print("sum out[0]:",sum(out[0]))  #tensor([1., 0., 1., 0., 1., 0., 1., 1., 0., 1.], device='cuda:0',

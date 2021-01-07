@@ -101,5 +101,5 @@ def test_img(num_images=256, length=64, num_time=10, N=256, max_fr=300, dt = 1e-
 
 if __name__ == '__main__':
     inputs, label = test_img()
-    print("inputs shape : ",inputs)
-    print("label shape : ",label)
+    print("inputs shape : ",inputs.shape)
+    print("label shape : ",label.shape)
