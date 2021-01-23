@@ -29,7 +29,8 @@ lidar_data = zeros(500,500);
 % lidar_data(1,1)
 % imagesc(lidar_data)
 % colorbar
-
+v = VideoWriter('peaks.avi');
+open(v);
 size(trim)
 for i =  a:-1:b
     disp(i)
@@ -38,13 +39,17 @@ for i =  a:-1:b
     if rem(i,100) == 0
         imagesc(lidar_data);
         colorbar;
+        hold on;
         pause(0.01)
+        frame = lidar_data;
+        writeVideo(v,frame);
         lidar_data =  zeros(500,500);
     end
     
 
     
 end
+close(v);
 imagesc(lidar_data);
 colorbar;
 
@@ -56,6 +61,7 @@ colorbar;
 % imagesc(trim);colorbar;
 
 
-% surface(trim);
-% colorbar
-% view(3)
+s = surface(trim);
+s.EdgeColor = 'none';
+%colorbar
+view(3)
