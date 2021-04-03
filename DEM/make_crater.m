@@ -1,3 +1,5 @@
+
+
 function f = make_crater(k)
     f = k
     size_factor = 128
@@ -44,12 +46,12 @@ function f = make_crater(k)
     a = max(model(:)) %22013
     b = min(model(:)) %5885
 
-    % s = surface(model);
-    % s.EdgeColor = 'none';
-    % zlim([-50 50])
-    % %colorbar
-    % view(3)
-    % 
+    s = surface(model);
+    s.EdgeColor = 'none';
+    zlim([-50 50])
+    %colorbar
+    view(3)
+    
     % v = VideoWriter('peaks_1.avi');
     % open(v);
 

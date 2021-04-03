@@ -33,7 +33,7 @@ v = VideoWriter('peaks.avi');
 open(v);
 size(trim)
 for i =  a:-1:b
-    disp(i)
+%     disp(i)
     lidar_data(trim==i) = 1;
     
     if rem(i,100) == 0

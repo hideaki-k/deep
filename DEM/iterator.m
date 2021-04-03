@@ -1,5 +1,5 @@
-for i=1:1:10
-   f =  make_crater(i)
+for i=1:1:1000
+   f =  make_bolder(i)
 end
 
 function f = count(i)

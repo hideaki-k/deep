@@ -13,8 +13,8 @@ img_save_dir = "./imgs/"
 os.makedirs(img_save_dir, exist_ok=True)
     
 """ Build Spiking Neural Unit """
-num_time = 100 # simulation time step
-V_th = 1.0
+num_time = 10 # simulation time step
+V_th = 0.1
 tau = 25e-3 # sec
 dt = 1e-3 # sec
 

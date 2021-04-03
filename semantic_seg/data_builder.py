@@ -55,10 +55,17 @@ class TrainLoadDataset(torch.utils.data.Dataset):
         print("imgs : ", imgs.shape) # imgs = torch.Size([1000, 1, 64, 64])
         print("data_set : ",data_set)
 
-
-        imgs_binary = np.heaviside(imgs[2],0)
-        plt.imshow(imgs_binary.reshape(64,64))
+        data_id = 2
+        imgs_binary = np.heaviside(imgs[data_id],0)
+        img = imgs_binary.reshape(64,64)
+        plt.imshow(img)
         plt.show()
+        plt.imsave("imgs_binary.png",img)
+        img_ = imgs_ano[data_id].reshape(64,64)
+        plt.imshow(img_)
+       
+        plt.show()
+        plt.imsave("imgs_ano.png",img_)
         x = np.zeros((N,4096,num_time))
         y = np.zeros((N,4096))
 
@@ -71,7 +78,7 @@ class TrainLoadDataset(torch.utils.data.Dataset):
         self.x = x.astype(np.float32)
         self.y = y.astype(np.float32)
 
-        data_id = 2
+        
         print("self.x shape:",self.x.shape)
         print(np.array(self.x[data_id].shape)) #[4096  100]
         sum = np.sum(self.x[data_id],axis=1)
@@ -83,7 +90,7 @@ class TrainLoadDataset(torch.utils.data.Dataset):
         ax2.imshow(np.reshape(self.x[data_id][:,0],(64,64)))
         plt.show()
         print("x shape :" ,x.shape)
-        rectangle_record(x)
+        rectangle_record(x,num_time=10,data_id=2)
 
     
     def __len__(self):
@@ -101,7 +108,7 @@ train_iter = DataLoader(train_dataset, batch_size=256, shuffle=True)
 
 # ネットワーク設計
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-model = network.SNU_Network(n_in=4096, n_mid=4096, n_out=4096, num_time=10, initial_bias=-0.5,gpu=True)
+model = network.SNU_Network(n_in=4096, n_mid=4096, n_out=4096, num_time=10 ,gpu=True)
 model = model.to(device)
 print("building model")
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
