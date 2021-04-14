@@ -1,4 +1,7 @@
 # matfileを無視
 *.mat
 # DEMフォルダを無視
-DEM
+DEM/
+
+
+DEM/crater/data_999.mat
