@@ -1,2 +1,4 @@
 # matfileを無視
 *.mat
+# DEMフォルダを無視
+DEM
