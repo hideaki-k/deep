@@ -8,3 +8,17 @@ DEM/crater/data_999.mat
 DEM/bolder/data_1.mat
 DEM/bolder/data_1.mat
 *.mat
+*.mat
+*.mat
+DEM/bolder/data_11.mat
+DEM/bolder/data_109.mat
+DEM/bolder/data_112.mat
+DEM/bolder/data_119.mat
+DEM/bolder/data_12.mat
+*.png
+semantic_seg/build_img/original_image_2.png
+semantic_seg/build_img/original_image_3.png
+*.png
+semantic_seg/build_img/original_image_3.png
+*.mp4
+*.mp4
