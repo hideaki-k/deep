@@ -1,11 +1,12 @@
-function f = make_bolder(k)
-    f = k
-    size_factor = 128
+function f = make_crater(k)
+    mode = k % fはモード0:なし、モード1は動画生成、モード2：3次元プロット
+    f = mode
+    size_factor = 64
     center = size_factor/2
     model = zeros(size_factor,size_factor);
 
 
-    R = 30 + 5*rand(1)
+    R = 15 + 5*rand(1)
     H_r = 10
     H_ro = 0.036*(2*R)^1.014
     H_r = H_ro
@@ -32,7 +33,7 @@ function f = make_bolder(k)
             else    
                 h = H_r*(R+W_r)^3/((R+W_r)^3-R^3)*(r/R)^(-3) - (H_r*R^3)/((R+W_r)^3-R^3);
              end
-            y = wgn(1,1,0);
+            y = wgn(1,1,-3)
             model(i,j) = -(h+y);
         end
     end
@@ -43,42 +44,47 @@ function f = make_bolder(k)
     % model
     a = max(model(:)) %22013
     b = min(model(:)) %5885
-
-    s = surface(model);
-    s.EdgeColor = 'none';
-    zlim([-50 50])
-    %colorbar
-    view(3)
-    % 
-    % v = VideoWriter('peaks_1.avi');
-    % open(v);
-
+%% 
+    if mode ==2
+        s = surface(model);
+        s.EdgeColor = 'none';
+        zlim([-50 50])
+        %colorbar
+        view(3)
+    end
+%   
+    if mode==1
+        v = VideoWriter('peaks_100_noise.avi');
+        open(v);
+    end
+%%
 
     time = 0;
     lidar_data = zeros(size_factor,size_factor);
     time_data = zeros(size_factor,size_factor,20); % 128 128 20 
 
-    for i =  19:-1:-1
+    for i =  10:-1:-10
         time = time + 1;
         lidar_data(model==i) = 1;
         time_data(:,:,time) = lidar_data;
-
-    %     imagesc(lidar_data);
-    %     colorbar;
-    %     hold on;
-    %     pause(0.1)
-    %     frame = lidar_data;
-    %     writeVideo(v,frame);
+%%
+        if mode ==1
+            imagesc(lidar_data);
+            colorbar;
+            hold on;
+            pause(0.1)
+            frame = lidar_data;
+            writeVideo(v,frame);
+        end
+%%
         lidar_data =  zeros(size_factor,size_factor);  
     end
-    % close(v);
+    if mode ==1
+        close(v);
+    end
     filenum = string(k)
     filename = "bolder/data_"+filenum
     save(filename,'time_data')
     
 
 end
-
-
-
-
