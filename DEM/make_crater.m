@@ -1,7 +1,7 @@
 
 
-function f = make_crater(k)
-    mode = k % fはモード0:なし、モード1は動画生成、モード2：3次元プロット
+function f = make_crater(k,mode)
+   % fはモード0:なし、モード1は動画生成、モード2：3次元プロット
     f = mode
     size_factor = 64
     center = size_factor/2
@@ -35,7 +35,7 @@ function f = make_crater(k)
             else    
                 h = H_r*(R+W_r)^3/((R+W_r)^3-R^3)*(r/R)^(-3) - (H_r*R^3)/((R+W_r)^3-R^3);
              end
-            y = wgn(1,1,-3)
+            y = wgn(1,1,-3);
             model(i,j) = h+y;
         end
     end
