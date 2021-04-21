@@ -22,3 +22,6 @@ semantic_seg/build_img/original_image_3.png
 semantic_seg/build_img/original_image_3.png
 *.mp4
 *.mp4
+*.mat
+*.gz
+*.pyc
