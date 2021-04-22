@@ -3,6 +3,8 @@
 # DEMフォルダを無視
 DEM/
 *.DEM
+bolder
+crater
 
 DEM/crater/data_999.mat
 DEM/bolder/data_1.mat
