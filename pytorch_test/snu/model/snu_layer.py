@@ -81,12 +81,9 @@ class SNU(nn.Module):
         if type(self.s) == numpy.ndarray:
             self.s = torch.from_numpy(self.s.astype(np.float32)).clone()
     
-        #print("x in snu:",x) 
-        print("x in snu.shape",x.shape) #x in snu.shape torch.Size([256, 784])
-        #print("self.Wx(x)",type(self.Wx(x)))
-        
-        print("self.Wx(x).shape",self.Wx(x).shape)
-        print("self.s.shape : ",self.s.shape)
+        #print("x in snu.shape",x.shape) #x in snu.shape torch.Size([256, 784])        
+        #print("self.Wx(x).shape",self.Wx(x).shape)
+        #print("self.s.shape : ",self.s.shape)
         s = F.elu(abs(self.Wx(x)) + self.l_tau * self.s * (1-self.y))
         #print("s : ",s)
 

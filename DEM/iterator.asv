@@ -1,9 +1,0 @@
-for i=1:1:10
-   f =  count(i)
-end
-
-function f = count(i)
-    f = i^2;
-    save('time_data','time_data')
-    
-end

@@ -123,6 +123,8 @@ for epoch in range(epochs):
     for i,(inputs, labels) in enumerate(train_iter, 0):
         optimizer.zero_grad()
         inputs = inputs.to(device)
+        print("inputs:",inputs.shape) #torch.Size([256, 4096, 10])
+        print("labels:",labels.shape) #torch.Size([256, 4096])
         #labels = labels.to(device,dtype=torch.long)
         labels = labels.to(device)
         loss, pred, _ = model(inputs, labels)
