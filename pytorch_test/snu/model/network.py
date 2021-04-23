@@ -7,6 +7,7 @@ import torch.optim as optim
 import torchvision
 from . import snu_layer
 import numpy as np
+from torchsummary import summary
 
 # Network definition
 class SNU_Network(torch.nn.Module):
@@ -193,9 +194,8 @@ class SNU_Network_classification(torch.nn.Module):
         y = torch.tensor(y, dtype=torch.int64)
         #print("type y",y.type()) #torch.Size([128]))
         #print("y",y)
-
-
         print("///////////////////////")
+
         criterion = nn.CrossEntropyLoss() #MNIST 
         #criterion = nn.MSELoss() # semantic segmantation
         _,m_col =  torch.max(m, 1)
@@ -233,7 +233,6 @@ class Conv_SNU_Network_classification(torch.nn.Module):
         # 入力チャネル数 出力チャネル数 フィルタサイズ
         self.cn1 = snu_layer.Conv_SNU(1, 6, 10, l_tau=l_tau, soft=soft, gpu=gpu)
         print("cn1!")
-        # 
         self.l2 = snu_layer.SNU(55, 2, l_tau=l_tau, soft=soft, gpu=gpu)
         print("l2!")
         self.n_out = n_out
