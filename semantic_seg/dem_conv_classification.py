@@ -18,6 +18,8 @@ from tqdm import tqdm
 from mp4_rec import record, rectangle_record
 from PIL import Image
 import scipy.io
+from torchsummary import summary
+
 
 class TrainLoadDataset(torch.utils.data.Dataset):
     def __init__(self, csv_file):
@@ -59,7 +61,7 @@ train_iter = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=
 
 # ネットワーク設計
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-model = network.Conv_SNU_Network_classification(n_in=4096, n_mid=1024, n_out=2,filter = 5, num_time=20 ,gpu=True)
+model = network.Conv_SNU_Network_classification(gpu=True)
 model = model.to(device)
 print("building model")
 optimizer = optim.Adam(model.parameters(), lr=1e-5)
@@ -79,9 +81,8 @@ for epoch in range(epochs):
         #print("labels:",labels.shape) #torch.Size([128])
         labels = labels.to(device)
         loss, pred, _ ,acc= model(inputs, labels)
-        #print("loss : ",loss)
-        #print("pred :",pred.shape)
-        #print("labels:",labels.shape)
+        print(model)
+        summary(model, [inputs, labels])
 
         pred,_ = torch.max(pred,1)
         #tmp = np.mean((_==labels).detach().cpu().numpy())
