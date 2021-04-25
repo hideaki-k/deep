@@ -227,18 +227,16 @@ class SNU_Network_classification(torch.nn.Module):
 class Conv_SNU_Network_classification(torch.nn.Module):
     def __init__(self, n_in=784, n_mid=256, n_out=2, filter = 10,
                  num_time=20, l_tau=0.8, soft=False, gpu=False,
-                 test_mode=False):
+                 ):
         super(Conv_SNU_Network_classification, self).__init__()
         
         # 入力チャネル数 出力チャネル数 フィルタサイズ
         self.cn1 = snu_layer.Conv_SNU(1, 6, 10, l_tau=l_tau, soft=soft, gpu=gpu)
-        print("cn1!")
         self.l2 = snu_layer.SNU(55, 2, l_tau=l_tau, soft=soft, gpu=gpu)
-        print("l2!")
+       
         self.n_out = n_out
         self.num_time = num_time
         self.gamma = (1/(num_time*n_out))*1e-3
-        self.test_mode = test_mode
 
     def _reset_state(self):
         self.cn1.reset_state()
@@ -258,36 +256,26 @@ class Conv_SNU_Network_classification(torch.nn.Module):
         self._reset_state()
 
         
-        if self.test_mode == True:
-            h1_list = []
-            h2_list = []
-            h3_list = []
-            out_list = []
-        
         for t in range(self.num_time):
 
             x_t = x[:,:,t]  #torch.Size([256, 784])
-            print("x_t : ",x_t.shape)
+            #print("x_t : ",x_t.shape)
             x_t = x_t.reshape((len(x_t), 1, 64, 64))
-            print("x_t : ",x_t.shape)
+            #print("x_t : ",x_t.shape)
 
             
             # 第一層　畳み込み
-            h1 = self.cn1(x_t) # 
+            h1 = self.cn1(x_t) 
+            #print("h1 :",h1.shape)
             # 第二層 最大プーリング
             h2 = F.max_pool2d(h1, 2)
+            #print("h2 :",h2.shape)
             h2 = torch.flatten(h2, 1)
+            #print("h2_ : ",h2.shape )
             # 第三層　出力
             print("end flatten")
             out = self.l2(h2)
             
-            
-            if self.test_mode == True:
-                h1_list.append(h1)
-                h2_list.append(h2)
-                out_list.append(out)
-            
-            #sum_out = out if sum_out is None else sum_out + out
             out_rec.append(out)
     
         out_rec = torch.stack(out_rec,dim=1)
@@ -323,11 +311,4 @@ class Conv_SNU_Network_classification(torch.nn.Module):
         print("correct : ",acc)
         #loss += self.gamma*torch.sum(m**2)
         #print("gamma loss",loss)
-        
-        
-
-        
-        if self.test_mode == True:
-            return loss, accuracy, h1_list, h2_list, h3_list, out_list
-        else:
-            return loss, m, out_rec,acc
+        return loss, m, out_rec,acc

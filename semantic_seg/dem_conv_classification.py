@@ -81,8 +81,8 @@ for epoch in range(epochs):
         #print("labels:",labels.shape) #torch.Size([128])
         labels = labels.to(device)
         loss, pred, _ ,acc= model(inputs, labels)
-        print(model)
-        summary(model, [inputs, labels])
+        #print(model)
+        #summary(model, [inputs, labels])
 
         pred,_ = torch.max(pred,1)
         #tmp = np.mean((_==labels).detach().cpu().numpy())
