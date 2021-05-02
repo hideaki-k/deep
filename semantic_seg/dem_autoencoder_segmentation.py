@@ -14,8 +14,12 @@ from model import snu_layer
 from model import network
 from tqdm import tqdm
 from mp4_rec import record, rectangle_record
+import pandas as pd
+import scipy.io
+from torchsummary import summary
 class TrainLoadDataset(torch.utils.data.Dataset):
-    def __init__(self, N=1000, dt=1e-3, num_time=100, max_fr=1000):
+
+    def __init__(self, N=1000, dt=1e-3, num_time=20, max_fr=1000):
         num_images = N #生成する画像数
         length = 64       #画像のサイズ
         
@@ -58,17 +62,19 @@ class TrainLoadDataset(torch.utils.data.Dataset):
         data_id = 2
         imgs_binary = np.heaviside(imgs[data_id],0)
         img = imgs_binary.reshape(64,64)
+        """
         plt.imshow(img)
         plt.show()
         plt.imsave("imgs_binary.png",img)
+        """
         img_ = imgs_ano[data_id].reshape(64,64)
-        plt.imshow(img_)
-       
-        plt.show()
+
+        
         plt.imsave("imgs_ano.png",img_)
+        
         x = np.zeros((N,4096,num_time))
         y = np.zeros((N,4096))
-
+        
 
         for i in tqdm(range(N)):
             fr = max_fr * np.repeat(np.expand_dims(np.heaviside(imgs[i],[0]),1),num_time,axis=1)
@@ -82,7 +88,7 @@ class TrainLoadDataset(torch.utils.data.Dataset):
         print("self.x shape:",self.x.shape)
         print(np.array(self.x[data_id].shape)) #[4096  100]
         sum = np.sum(self.x[data_id],axis=1)
-
+        """
         fig = plt.figure(figsize=(6,3))
         ax1 = fig.add_subplot(1,2,1)
         ax1.imshow(np.reshape(sum,(64,64)))
@@ -90,8 +96,8 @@ class TrainLoadDataset(torch.utils.data.Dataset):
         ax2.imshow(np.reshape(self.x[data_id][:,0],(64,64)))
         plt.show()
         print("x shape :" ,x.shape)
-        rectangle_record(x,num_time,data_id=2)
-
+        #rectangle_record(x,num_time,data_id=2)
+        """
     
     def __len__(self):
         return self.N
@@ -99,17 +105,43 @@ class TrainLoadDataset(torch.utils.data.Dataset):
     def __getitem__(self, i):
         return self.x[i], self.y[i]    
 
+class LoadDataset(torch.utils.data.Dataset):
+    def __init__(self, csv_file):
+       
+        self.df = pd.read_csv(csv_file)
+        #self.data_transform = data_transform
 
-train_dataset = TrainLoadDataset(N=2560, dt=1e-3, num_time=20, max_fr=300)
+    def __len__(self):
+        return len(self.df)
+
+    def __getitem__(self, i):
+        file = self.df['id'][i]
+        image = scipy.io.loadmat(file)
+        label = scipy.io.loadmat(self.df['label'][i])
+
+        image = image['name']
+        label = label['name']
+        #print("image : ",image.shape)
+        #print("label : ",label.shape)
+        image = image.reshape(4096,20)
+        #print("image : ",image.shape)
+        image = image.astype(np.float32)
+        #label = label.astype(np.int64)
+        #label = torch.tensor(label,dtype =torch.int64 )
+        label = label.reshape(4096)
+        label = label.astype(np.float32)
+        return image, label
+     
+train_dataset = LoadDataset("semantic_img_loc.csv")
 data_id = 2
-print("***************************==============")
+print("***************************")
 print(np.array(train_dataset[data_id][0]).shape) #(784, 100) 
 train_iter = DataLoader(train_dataset, batch_size=256, shuffle=True)
 
 # ネットワーク設計
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # オートエンコーダー　
-model = network.SNU_Network(n_in=4096, n_mid=4096, n_out=4096, num_time=20 ,gpu=True)
+model = network.SNU_Network(gpu=True)
 model = model.to(device)
 print("building model")
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
@@ -120,12 +152,13 @@ for epoch in range(epochs):
     running_loss = 0.0
     local_loss = []
     acc = []
+    print("EPOCH",epoch)
 
     for i,(inputs, labels) in enumerate(train_iter, 0):
         optimizer.zero_grad()
         inputs = inputs.to(device)
-        print("inputs:",inputs.shape) #torch.Size([256, 4096, 10])
-        print("labels:",labels.shape) #torch.Size([256, 4096])
+        #print("inputs:",inputs.shape) #torch.Size([256, 4096, 10])
+        #print("labels:",labels.shape) #torch.Size([256, 4096])
         #labels = labels.to(device,dtype=torch.long)
         labels = labels.to(device)
         loss, pred, _ = model(inputs, labels)
