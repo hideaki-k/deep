@@ -47,7 +47,7 @@ def test_img(num_images=256, length=64, num_time=20, N=256, max_fr=300, dt = 1e-
         centers = []
         img = np.zeros([length, length])
         img_ano = np.zeros([length, length])
-        for j in range(6):
+        for j in range(3):
             img, img_ano, centers = rectangle(img, img_ano, centers, 7)
         #img_test[i, 0, :, :] = img
         imgs[i, :, :] = img
