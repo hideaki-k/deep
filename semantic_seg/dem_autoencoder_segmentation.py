@@ -136,7 +136,7 @@ train_dataset = LoadDataset("semantic_img_loc.csv")
 data_id = 2
 print("***************************")
 print(np.array(train_dataset[data_id][0]).shape) #(784, 100) 
-train_iter = DataLoader(train_dataset, batch_size=256, shuffle=True)
+train_iter = DataLoader(train_dataset, batch_size=128, shuffle=True)
 
 # ネットワーク設計
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -164,7 +164,7 @@ for epoch in range(epochs):
         loss, pred, _ = model(inputs, labels)
         print("loss : ",loss)
         print("pred :",pred.shape)
-        print("labels:",labels.shape)
+
 
         pred,_ = torch.max(pred,1)
         #tmp = np.mean((_==labels).detach().cpu().numpy())
@@ -191,6 +191,9 @@ plt.xlabel("epoch")
 plt.ylabel("Loss")
 plt.show()
 print("finish")
+
+
+
 
 model.eval()            #評価モード
 inputs_, label_ = test_img()
