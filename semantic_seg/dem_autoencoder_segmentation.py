@@ -145,7 +145,7 @@ model = network.SNU_Network(gpu=True)
 model = model.to(device)
 print("building model")
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
-epochs = 100
+epochs = 1
 loss_hist = []
 acc_hist = []
 for epoch in range(epochs):
@@ -190,11 +190,14 @@ plt.plot(loss_hist)
 plt.xlabel("epoch")
 plt.ylabel("Loss")
 plt.show()
-print("finish")
+print("learn finish")
+# モデル保存
+torch.save(model.state_dict(), "models/models_state_dict.pth")
+ # モデル読み込み
+print("success model saving")
 
 
-
-
+"""
 model.eval()            #評価モード
 inputs_, label_ = test_img()
 inputs_ = inputs_.to(device)
@@ -209,7 +212,7 @@ result = result.to(device2)
 result = result.detach().clone().numpy()
 # MP4  レコード
 record(result)
-
+"""
 
 
 """
