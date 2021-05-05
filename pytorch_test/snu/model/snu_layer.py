@@ -15,10 +15,10 @@ import numpy
 from . import step_func
 
 class SNU(nn.Module):
-    def __init__(self, n_in, n_out, l_tau=0.8, soft=False, rec=False, nobias=False, initial_bias=-0.5, gpu=True):
+    def __init__(self, in_channels, out_channels, l_tau=0.8, soft=False, rec=False, nobias=False, initial_bias=-0.5, gpu=True):
         super(SNU,self).__init__()
         
-        self.n_out = n_out
+        self.out_channels= out_channels
         self.l_tau = l_tau
         self.rec = rec
         self.soft = soft
@@ -39,7 +39,7 @@ class SNU(nn.Module):
         #torch.nn.init.normal_(self.w1, mean=0.0)
         
         #self.Wx = torch.einsum("abc,cd->abd", (x_data, w1))
-        self.Wx = nn.Linear(4374, n_out, bias=False).to(device)
+        self.Wx = nn.Linear(4374, out_channels, bias=False).to(device)
         #nn.init.uniform_(self.Wx.weight, -0.1, 0.1) #3.0
         torch.nn.init.xavier_uniform_(self.Wx.weight)
 
@@ -68,8 +68,8 @@ class SNU(nn.Module):
             dtype = torch.float
             device=torch.device("cpu")
             
-        self.s = torch.zeros((shape[0], self.n_out),device=device,dtype=dtype)
-        self.y = torch.zeros((shape[0], self.n_out),device=device,dtype=dtype)
+        self.s = torch.zeros((shape[0], self.out_channels),device=device,dtype=dtype)
+        self.y = torch.zeros((shape[0], self.out_channels),device=device,dtype=dtype)
               
     
     def forward(self,x):
@@ -116,12 +116,14 @@ class SNU(nn.Module):
         return y
 
 class Conv_SNU(nn.Module):
-    def __init__(self, n_in, n_out, filter, l_tau=0.8, soft=False, rec=False, nobias=False, initial_bias=-0.5, gpu=True):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, l_tau=0.8, soft=False, rec=False, nobias=False, initial_bias=-0.5, gpu=True):
         super(Conv_SNU,self).__init__()
 
-        self.n_in = n_in
-        self.n_out = n_out
-        self.filter = filter
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
+        self.padding = padding
         self.l_tau = l_tau
         self.rec = rec
         self.soft = soft
@@ -139,7 +141,7 @@ class Conv_SNU(nn.Module):
             device=torch.device("cpu")
         
 
-        self.Wx = nn.Conv2d(n_in, n_out, filter, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+        self.Wx = nn.Conv2d(self.in_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
         torch.nn.init.xavier_uniform_(self.Wx.weight)
 
         if nobias:
@@ -156,7 +158,7 @@ class Conv_SNU(nn.Module):
         self.s = s
         self.y = y
 
-    def initialize_state(self, shape):
+    def initialize_state(self, shape): #shape (バッチ,tチャネル,oh,ow)
         if self.gpu:
             #xp = cuda.cupy
             dtype = torch.float
@@ -164,9 +166,14 @@ class Conv_SNU(nn.Module):
         else:
             dtype = torch.float
             device=torch.device("cpu")
-            
-        self.s = torch.zeros((shape[0], self.n_out, 55, 55),device=device,dtype=dtype)
-        self.y = torch.zeros((shape[0], self.n_out, 55, 55),device=device,dtype=dtype)
+        self.oh = int(((shape[2] + 2*self.padding - self.kernel_size)/self.stride) + 1) # OH=H+2*P-FH/s +1
+        self.ow = int(((shape[3] + 2*self.padding - self.kernel_size)/self.stride) + 1)
+        ###########\dem_conv_classification.py
+        self.s = torch.zeros((shape[0], self.out_channels, self.oh, self.ow),device=device,dtype=dtype)
+        self.y = torch.zeros((shape[0], self.out_channels, self.oh, self.ow),device=device,dtype=dtype)
+        ############dem_autoencoder_segmentation.py
+        #self.s = torch.zeros((shape[0], self.out_channels, shape[2], shape[3]),device=device,dtype=dtype)
+        #self.y = torch.zeros((shape[0], self.out_channels, shape[2], shape[3]),device=device,dtype=dtype)
         
     
     def forward(self,x):
@@ -179,11 +186,11 @@ class Conv_SNU(nn.Module):
             self.s = torch.from_numpy(self.s.astype(np.float32)).clone()
     
         #print("x in snu:",x) 
-        print("x in snu.shape",x.shape) #x in snu.shape torch.Size([256, 784])
-        print("self.Wx(x).shape",self.Wx(x).shape)
+        #print("x in snu.shape",x.shape) #([256, 4096])
+        #print("self.Wx(x).shape",self.Wx(x).shape)
         
-        print("self.Wx(x).shape",self.Wx(x).shape)
-        print("self.s.shape : ",self.s.shape)
+        #print("self.Wx(x).shape",self.Wx(x).shape)
+        #print("self.s.shape : ",self.s.shape)
         #print( " self.l_tau * self.s * (1-self.y)):",self.l_tau * self.s * (1-self.y))
         #print("self.Wx(x):",self.Wx(x))
         
@@ -220,12 +227,13 @@ class Conv_SNU(nn.Module):
 
 
 class tConv_SNU(nn.Module):
-    def __init__(self, n_in, n_out, filter, l_tau=0.8, soft=False, rec=False, nobias=False, initial_bias=-0.5, gpu=True):
-        super(Conv_SNU,self).__init__()
+    def __init__(self, in_channels, out_channels, kernel_size, stride=0, l_tau=0.8, soft=False, rec=False, nobias=False, initial_bias=-0.5, gpu=True):
+        super(tConv_SNU,self).__init__()
 
-        self.n_in = n_in
-        self.n_out = n_out
-        self.filter = filter
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.kernel_size = kernel_size
+        self.stride = stride
         self.l_tau = l_tau
         self.rec = rec
         self.soft = soft
@@ -243,7 +251,7 @@ class tConv_SNU(nn.Module):
             device=torch.device("cpu")
         
 
-        self.Wx = nn.ConvTranspose2d(n_in, n_out, filter, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+        self.Wx = nn.ConvTranspose2d(self.in_channels, self.out_channels, self.kernel_size, self.stride, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
         torch.nn.init.xavier_uniform_(self.Wx.weight)
 
         if nobias:
@@ -269,8 +277,8 @@ class tConv_SNU(nn.Module):
             dtype = torch.float
             device=torch.device("cpu")
             
-        self.s = torch.zeros((shape[0], self.n_out, 55, 55),device=device,dtype=dtype)
-        self.y = torch.zeros((shape[0], self.n_out, 55, 55),device=device,dtype=dtype)
+        self.s = torch.zeros((shape[0], self.out_channels, 2*shape[2], 2*shape[3]),device=device,dtype=dtype)
+        self.y = torch.zeros((shape[0], self.out_channels, 2*shape[2], 2*shape[3]),device=device,dtype=dtype)
         
     
     def forward(self,x):
@@ -283,11 +291,11 @@ class tConv_SNU(nn.Module):
             self.s = torch.from_numpy(self.s.astype(np.float32)).clone()
     
         #print("x in snu:",x) 
-        print("x in snu.shape",x.shape) #x in snu.shape torch.Size([256, 784])
-        print("self.Wx(x).shape",self.Wx(x).shape)
+        #print("x in snu.shape",x.shape) #x in snu.shape torch.Size([256, 784])
+        #print("self.Wx(x).shape",self.Wx(x).shape)
         
-        print("self.Wx(x).shape",self.Wx(x).shape)
-        print("self.s.shape : ",self.s.shape)
+        #print("self.Wx(x).shape",self.Wx(x).shape)
+        #print("self.s.shape : ",self.s.shape)
         #print( " self.l_tau * self.s * (1-self.y)):",self.l_tau * self.s * (1-self.y))
         #print("self.Wx(x):",self.Wx(x))
         
