@@ -13,7 +13,7 @@ sys.path.append(r"C:\Users\aki\Documents\GitHub\deep\pytorch_test\snu")
 from model import snu_layer
 from model import network
 from tqdm import tqdm
-from mp4_rec import record, rectangle_record
+from mp4_rec import mk_txt, record, rectangle_record
 import pandas as pd
 import scipy.io
 from torchsummary import summary
@@ -48,7 +48,8 @@ class LoadDataset(torch.utils.data.Dataset):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     
 model = network.SNU_Network(gpu=True)
 model = model.to(device)
-model.load_state_dict(torch.load("models/models_state_dict.pth"))
+model_path = "models/models_state_dict_5epochs.pth"
+model.load_state_dict(torch.load(model_path))
 print("load model")
 
  # test_img : 評価用画像生成
@@ -58,7 +59,7 @@ label_ = label_.to(device)
 print("inputs_",inputs_.shape) # 
 print("label_",label_.shape)
 
-label, pred, result = model(inputs_, label_)
+label, pred, result, _ = model(inputs_, label_)
 print("result shape : ",result.shape) #torch.Size([128, 21, 1, 64, 64])
 print("inputs_ shape : ",inputs_.shape) #torch.Size([128, 4096, 20])
 
@@ -71,5 +72,6 @@ inputs_ = inputs_.detach().clone().numpy()
 
 data_id = 2
 num_time = 20
-rectangle_record(inputs_,num_time=num_time, data_id=data_id)
+mk_txt(model_path)
+rectangle_record(inputs_,num_time=num_time,data_id=data_id)
 record(result,num_time=num_time,data_id=data_id)
