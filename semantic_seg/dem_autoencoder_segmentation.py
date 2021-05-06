@@ -13,7 +13,7 @@ sys.path.append(r"C:\Users\aki\Documents\GitHub\deep\pytorch_test\snu")
 from model import snu_layer
 from model import network
 from tqdm import tqdm
-from mp4_rec import record, rectangle_record
+#from mp4_rec import record, rectangle_record
 import pandas as pd
 import scipy.io
 from torchsummary import summary
@@ -145,7 +145,7 @@ model = network.SNU_Network(gpu=True)
 model = model.to(device)
 print("building model")
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
-epochs = 1
+epochs = 5
 loss_hist = []
 acc_hist = []
 for epoch in range(epochs):
@@ -153,7 +153,9 @@ for epoch in range(epochs):
     local_loss = []
     acc = []
     print("EPOCH",epoch)
-
+    # モデル保存
+    torch.save(model.state_dict(), "models/models_state_dict_"+str(epoch)+"epochs.pth")
+    print("success model saving")
     for i,(inputs, labels) in enumerate(train_iter, 0):
         optimizer.zero_grad()
         inputs = inputs.to(device)
@@ -161,14 +163,12 @@ for epoch in range(epochs):
         #print("labels:",labels.shape) #torch.Size([256, 4096])
         #labels = labels.to(device,dtype=torch.long)
         labels = labels.to(device)
-        loss, pred, _ = model(inputs, labels)
+        loss, pred, _, iou = model(inputs, labels)
         print("loss : ",loss)
-        print("pred :",pred.shape)
-
-
+        print("IOU SCORE　: ",iou)
         pred,_ = torch.max(pred,1)
-        #tmp = np.mean((_==labels).detach().cpu().numpy())
-        #acc.append(tmp)  
+        acc.append(iou)
+
         loss.backward()
         optimizer.step()
 
@@ -179,20 +179,24 @@ for epoch in range(epochs):
             print('[{:d}, {:5d}] loss: {:.3f}'
                         .format(epoch + 1, i + 1, running_loss / 100))
             running_loss = 0.0
-    #mean_acc = np.mean(acc)
-    #acc_hist.append(mean_acc)
+    mean_acc = np.mean(acc)
+    acc_hist.append(mean_acc)
     mean_loss = np.mean(local_loss)
     loss_hist.append(mean_loss)
 
-    
+print("learn finish")   
 plt.figure(figsize=(3.3,2),dpi=150)
 plt.plot(loss_hist)
 plt.xlabel("epoch")
 plt.ylabel("Loss")
 plt.show()
-print("learn finish")
-# モデル保存
-torch.save(model.state_dict(), "models/models_state_dict.pth")
+plt.figure(figsize=(3.3,2),dpi=150)
+plt.plot(acc_hist)
+plt.xlabel("epoch")
+plt.ylabel("IOU SCORE")
+plt.show()
+
+torch.save(model.state_dict(), "models/models_state_dict_end.pth")
  # モデル読み込み
 print("success model saving")
 
