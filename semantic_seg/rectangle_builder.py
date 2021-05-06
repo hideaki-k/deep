@@ -37,7 +37,7 @@ def rectangle(img, img_ano, centers, max_side):
     return img, img_ano, centers
 
 
-def test_img(num_images=128, length=64, num_time=20, N=256, max_fr=300, dt = 1e-3):
+def test_img(num_images=128, length=64, num_time=20, max_fr=300, dt = 1e-3):
     #img_test = np.zeros([num_images, 1, length, length])
     #imgs_test_ano = np.zeros([num_images, 1, length, length])
     imgs = np.zeros([num_images, length, length]) #ゼロ行列を生成、入力画像
@@ -75,7 +75,7 @@ def test_img(num_images=128, length=64, num_time=20, N=256, max_fr=300, dt = 1e-
     x = np.zeros((num_images,4096,num_time))
     y = np.zeros((num_images,4096))
 
-    for i in tqdm(range(N)):
+    for i in tqdm(range(num_images)):
         fr = max_fr * np.repeat(np.expand_dims(np.heaviside(imgs[i],[0]),1),num_time,axis=1)
         x[i] = np.where(np.random.rand(4096, num_time) < fr*dt, 1, 0)
         y[i] = imgs_ano[i]
