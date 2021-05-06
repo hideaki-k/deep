@@ -25,3 +25,5 @@ semantic_seg/build_img/original_image_3.png
 *.mat
 *.gz
 *.pyc
+*.txt
+*.pth

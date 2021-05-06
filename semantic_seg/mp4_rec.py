@@ -14,6 +14,14 @@ print("mkdir !")
 
 OUT_FILE_NAME_ = str(new_dir_path)+"/inputs_output_video.mp4"
 #OUT_FILE_NAME = "output_video.avi"
+def mk_txt(model_name):
+    model_name = model_name.replace('models/','')
+    model_name = model_name.replace('.pth','')
+    path = str(new_dir_path)+"/"+str(model_name)+'.txt'
+    f = open(path,'w')
+    f.write(model_name)
+    f.close()
+
 def rectangle_record(x,num_time=10,data_id=2):
     fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
     dst = cv2.imread('build_img_4_25/image.png') #一度、savefigしてから再読み込み
