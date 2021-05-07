@@ -4,6 +4,23 @@ from PIL import Image
 import matplotlib.animation as animation
 import time
 import scipy.io
+
+"""
+#### label imageを見たいときはコメントアウト外してください
+
+name = scipy.io.loadmat('label/label_100.mat')
+print(name)
+print(name['name'].shape)
+
+img = name['name']
+np.set_printoptions(threshold=np.inf)
+print(img)
+
+plt.imshow(img)
+plt.show()
+"""
+##### image　を見たいときはコメントアウトを外してください
+
 name = scipy.io.loadmat('image/img_100.mat')
 print(name)
 
@@ -17,6 +34,9 @@ print("============")
 print(name['name'].shape)
 print(name['name'][:,:,1])
 img = name['name'][:,:,1]
+np.set_printoptions(threshold=np.inf)
+print(img)
+"""
 N = 100
 fig, ax = plt.subplots()
 def update(i):
@@ -27,3 +47,4 @@ def update(i):
     plt.imshow(img,cmap='gray')
 hoge = animation.FuncAnimation(fig, update, np.arange(1,  N), interval=25)  # 代入しないと消される
 plt.show()
+"""
