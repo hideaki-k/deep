@@ -115,8 +115,8 @@ def make_img(num_images=256, length=64, num_time=20, N=256, max_fr=300, dt = 1e-
     imgs_ano = torch.tensor(imgs_ano, dtype=torch.float32)
 
 
-    imgs = imgs.reshape(imgs.shape[0],-1)/255
-    imgs_ano = imgs_ano.reshape(imgs_ano.shape[0],-1)/255
+    imgs = imgs.reshape(imgs.shape[0],-1)
+    imgs_ano = imgs_ano.reshape(imgs_ano.shape[0],-1)
 
 
     #data_set = TensorDataset(imgs, imgs_ano)
