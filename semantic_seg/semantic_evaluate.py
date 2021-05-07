@@ -13,7 +13,7 @@ sys.path.append(r"C:\Users\aki\Documents\GitHub\deep\pytorch_test\snu")
 from model import snu_layer
 from model import network
 from tqdm import tqdm
-from mp4_rec import mk_txt, record, rectangle_record
+from mp4_rec import mk_txt, record, rectangle_record, heatmap
 import pandas as pd
 import scipy.io
 from torchsummary import summary
@@ -48,7 +48,7 @@ class LoadDataset(torch.utils.data.Dataset):
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     
 model = network.SNU_Network(gpu=True)
 model = model.to(device)
-model_path = "models/models_state_dict_5epochs.pth"
+model_path = "models/models_state_dict_end.pth"
 model.load_state_dict(torch.load(model_path))
 print("load model")
 
@@ -70,8 +70,11 @@ inputs_ = inputs_.to(device2)
 inputs_ = inputs_.detach().clone().numpy() 
 # MP4  レコード
 
-data_id = 2
+data_id = 4
 num_time = 20
+
 mk_txt(model_path)
+heatmap(result,num_time=num_time,data_id=data_id)
+
 rectangle_record(inputs_,num_time=num_time,data_id=data_id)
 record(result,num_time=num_time,data_id=data_id)
