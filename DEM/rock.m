@@ -4,18 +4,25 @@
 %    --------  +  --------  +  --------  =  1
 %      XR^2         YR^2         ZR^2
 size_factor = 5
-xc = 0;
-yc = 0;
+xc = 10;
+yc = 5;
 zc = 0;
 xr = 10;
 yr = 5;
 zr = 10;
 model = zeros(2*xr,2*yr);
-for i =  1:1:xr
-    for j = 1:1:yr
-       if j < yr*sqrt(1-i^2/xr^2)
-            z = genrate_ellipsoid(i,j,xc, yc, zc, 10, 5, 10);
-        	model(i,j) = z;
+for i =  1:1:2*xr
+    for j = 1:1:2*yr
+       if j > yc
+           if j < yc + yr*sqrt(1-(i-xc)^2/xr^2)
+                z = genrate_ellipsoid(i,j,xc, yc, zc, 10, 5, 10);
+                model(i,j) = z;
+           end
+       else
+          if j > yc - yr*sqrt(1-(i-xc)^2/xr^2)
+                z = genrate_ellipsoid(i,j,xc, yc, zc, 10, 5, 10);
+                model(i,j) = z;
+          end
        end
     end
 end
