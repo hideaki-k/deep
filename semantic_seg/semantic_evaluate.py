@@ -52,8 +52,13 @@ model_path = "models/models_state_dict_end.pth"
 model.load_state_dict(torch.load(model_path))
 print("load model")
 
- # test_img : 評価用画像生成
-inputs_, label_ = test_img() 
+# test_img : 評価用画像生成
+# inputs_, label_ = test_img() 
+valid_dataset = LoadDataset("semantic_img_loc.csv")
+valid_iter = DataLoader(valid_dataset, batch_size=128, shuffle=False)
+for i,(inputs, labels) in enumerate(valid_iter, 0):
+    inputs_ = inputs
+    label_ = labels
 inputs_ = inputs_.to(device)
 label_ = label_.to(device)
 print("inputs_",inputs_.shape) # 
@@ -70,7 +75,7 @@ inputs_ = inputs_.to(device2)
 inputs_ = inputs_.detach().clone().numpy() 
 # MP4  レコード
 
-data_id = 4
+data_id = 1
 num_time = 20
 
 mk_txt(model_path)
