@@ -145,10 +145,10 @@ model = network.SNU_Network(gpu=True)
 model = model.to(device)
 print("building model")
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
-epochs = 5
+epochs = 100
 loss_hist = []
 acc_hist = []
-for epoch in range(epochs):
+for epoch in tqdm(range(epochs)):
     running_loss = 0.0
     local_loss = []
     acc = []
@@ -160,12 +160,13 @@ for epoch in range(epochs):
         optimizer.zero_grad()
         inputs = inputs.to(device)
         #print("inputs:",inputs.shape) #torch.Size([256, 4096, 10])
-        #print("labels:",labels.shape) #torch.Size([256, 4096])
+        #torch.set_printoptions(threshold = 1000000)
+        #print("labels:",labels) #torch.Size([256, 4096])
         #labels = labels.to(device,dtype=torch.long)
         labels = labels.to(device)
         loss, pred, _, iou = model(inputs, labels)
-        print("loss : ",loss)
-        print("IOU SCORE　: ",iou)
+        #print("loss : ",loss)
+        #print("IOU SCORE　: ",iou)
         pred,_ = torch.max(pred,1)
         acc.append(iou)
 
@@ -179,22 +180,27 @@ for epoch in range(epochs):
             print('[{:d}, {:5d}] loss: {:.3f}'
                         .format(epoch + 1, i + 1, running_loss / 100))
             running_loss = 0.0
+    
     mean_acc = np.mean(acc)
+    print("mean iou ",mean_acc)
     acc_hist.append(mean_acc)
     mean_loss = np.mean(local_loss)
+    print("mean loss",mean_loss)
     loss_hist.append(mean_loss)
 
 print("learn finish")   
-plt.figure(figsize=(3.3,2),dpi=150)
+fig1 = plt.figure(figsize=(3.3,2),dpi=150)
 plt.plot(loss_hist)
 plt.xlabel("epoch")
 plt.ylabel("Loss")
 plt.show()
-plt.figure(figsize=(3.3,2),dpi=150)
+fig1.savefig('models/loss.jpg')
+fig2 = plt.figure(figsize=(3.3,2),dpi=150)
 plt.plot(acc_hist)
 plt.xlabel("epoch")
 plt.ylabel("IOU SCORE")
 plt.show()
+fig2.savefig('models/IOU.jpg')
 
 torch.save(model.state_dict(), "models/models_state_dict_end.pth")
  # モデル読み込み
