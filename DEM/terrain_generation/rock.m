@@ -16,12 +16,14 @@ for i =  1:1:200
        if j > yc
            if j < yc + yr*sqrt(1-(i-xc)^2/xr^2)
                 z = genrate_ellipsoid(i,j,xc, yc, zc, xr, yr, zr);
-                model(i,j) = z;
+                
+                model(i,j) = z ;
            end
        else
           if j > yc - yr*sqrt(1-(i-xc)^2/xr^2)
                 z = genrate_ellipsoid(i,j,xc, yc, zc, xr, yr, zr);
-                model(i,j) = z;
+                
+                model(i,j) = z ;
           end
        end
     end
