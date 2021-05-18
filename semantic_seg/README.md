@@ -4,8 +4,9 @@
 教師データ
 (C:\Users\aki\Documents\GitHub\deep\semantic_seg\semantic_data)
 
-各エポックごとに/modelsに.pthとしてsaveされる。
+各エポックごとに/modelsに.pthとしてsaveされる。  
 
+教師データはrectangle_builder.pyで生成される・
 # dem_conv_classification.py
 
 64pixの二値分類タスク
