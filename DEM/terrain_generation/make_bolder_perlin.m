@@ -10,9 +10,9 @@ function f = make_bolder_perlin(k,mode)
     yc = 32;
     zc = 0;
 
-    xr = 15+abs(5*randn())
-    yr = 15+abs(5*randn())
-    zr = 7+abs(5*randn())
+    xr = 15+abs(5*randn());
+    yr = 15+abs(5*randn());
+    zr = 7+abs(5*randn());
 
     model = zeros(64,64);
     %% Set the range of area to generate the terrain
@@ -53,28 +53,53 @@ function f = make_bolder_perlin(k,mode)
            end
         end
     end
-    %% モード2:プロット
+    %% モデル小数点丸め
+    model;
+    model = round(model,0);
+    model;
+    %% モード2:3Dプロット
     if mode == 2
         s = surface(model);
         s.EdgeColor = 'none';
         axis equal
-        zlim([0 30])
-        xlim([0 64])
-        ylim([0 64])
+        zlim([0 30]);
+        xlim([0 64]);
+        ylim([0 64]);
         %colorbar
         view(3)
+    end
+    %% モード1:openV
+    if mode==1
+        v = VideoWriter('4_22_20step.avi');
+        open(v);
     end
     %% データに保存
     time = 0
     lidar_data = zeros(64,64);
-    time_data = zeros(64,64,20)
+    time_data = zeros(64,64,20);
     for i = 20:-1:0
         time = time+1
         lidar_data(model==i) = 1;
         time_data(:,:,time)=lidar_data;
-    filenum = string(k)
-    filename ~ "perlin_bolder/data_"+filenum
-    save(filenum,'time_data')
+       %% モード1:動画生成
+        if mode ==1
+            imagesc(lidar_data);
+            colorbar;
+            hold on;
+            pause(0.1)
+            frame = lidar_data;
+            writeVideo(v,frame);
+        end
+        lidar_data =  zeros(64,64); 
+    end
+    %% モード1:closeV
+    if mode ==1
+        close(v);
+    end
+    %% 保存
+    filenum = string(k);
+    filename ="terrain_generation/perlin_bolder/data_"+filenum;
+    save(filename,'time_data')
 end
 
 %% 楕円の方程式
