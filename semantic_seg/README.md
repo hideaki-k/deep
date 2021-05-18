@@ -6,7 +6,9 @@
 
 各エポックごとに/modelsに.pthとしてsaveされる。  
 
-教師データはrectangle_builder.pyで生成される・
+教師データはrectangle_builder.pyで生成される.
+
+
 # dem_conv_classification.py
 
 64pixの二値分類タスク
@@ -19,3 +21,4 @@
     C:\Users\aki\Documents\GitHub\deep\DEM\terrain_generation\perlin_bolder
 )
 
+![image](https://user-images.githubusercontent.com/56909755/118626459-dc948400-b805-11eb-8c57-f77c62fbeb1e.png)
