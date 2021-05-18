@@ -105,6 +105,7 @@ for epoch in range(epochs):
     mean_acc = np.mean(local_acc)
     acc_hist.append(mean_acc)
     print("EPOCH : ",epoch)
+    print("mean_loss : ",mean_loss)
     print("mean_acc : ",mean_acc)
 
     
