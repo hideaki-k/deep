@@ -4,7 +4,8 @@ from PIL import Image
 import matplotlib.animation as animation
 import time
 import scipy.io
-time_data = scipy.io.loadmat('crater/data_10.mat')
+#time_data = scipy.io.loadmat('crater/data_10.mat')
+time_data = scipy.io.loadmat('terrain_generation/perlin_bolder/data_10.mat')
 print(time_data)
 
 print(type(time_data))
