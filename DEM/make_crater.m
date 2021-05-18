@@ -8,8 +8,8 @@ function f = make_crater(k,mode)
     model = zeros(size_factor,size_factor);
 
 
-    R = 15 + 5*rand(1)
-    H_r = 10
+    R = 15 + abs(5*randn(1))
+   % H_r = 150 + abs(5*randn())
     H_ro = 0.036*(2*R)^1.014
     H_r = H_ro
     H_c = 0.196*(2*R)^1.010 - H_ro 
@@ -24,8 +24,8 @@ function f = make_crater(k,mode)
     for i =  1:1:size_factor
         for j = 1:1:size_factor
 
-
-            r = sqrt(abs(i-center)^2 + abs(j-center)^2);
+            y = wgn(1,1,-3);
+            r = sqrt(abs(i-center)^2 + abs(j-center)^2)+y;
              if r <= alpha
                  h = (H_c+H_ro)*(r^2/R^2)-H_c;
              elseif r <= R
@@ -35,7 +35,7 @@ function f = make_crater(k,mode)
             else    
                 h = H_r*(R+W_r)^3/((R+W_r)^3-R^3)*(r/R)^(-3) - (H_r*R^3)/((R+W_r)^3-R^3);
              end
-            y = wgn(1,1,-3);
+           
             model(i,j) = h;
         end
     end
