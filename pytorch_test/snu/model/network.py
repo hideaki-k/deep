@@ -16,17 +16,22 @@ class SNU_Network(torch.nn.Module):
                  num_time=20, l_tau=0.8, soft=False, gpu=False,
                  test_mode=False):
         super(SNU_Network, self).__init__()
-        # Encoder layers
-        self.l1 = snu_layer.Conv_SNU(in_channels=1, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, gpu=gpu)
-        self.l2 = snu_layer.Conv_SNU(in_channels=16, out_channels=4, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, gpu=gpu)
-        # Decoder layers
-        self.l3 = snu_layer.tConv_SNU(in_channels=4, out_channels=16, kernel_size=2,stride=2, l_tau=l_tau, soft=soft, gpu=gpu)
-        self.l4 = snu_layer.tConv_SNU(in_channels=16, out_channels=1, kernel_size=2, stride=2, l_tau=l_tau, soft=soft, gpu=gpu)
-        
+
         self.n_out = n_out
         self.num_time = num_time
         self.gamma = (1/(num_time*n_out))*1e-3
         self.test_mode = test_mode
+        # Encoder layers
+        self.l1 = snu_layer.Conv_SNU(in_channels=1, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, gpu=gpu)
+        self.bntt1 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+        self.l2 = snu_layer.Conv_SNU(in_channels=16, out_channels=4, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, gpu=gpu)
+        self.bntt2 = nn.ModuleList([nn.BatchNorm2d(4, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+        # Decoder layers
+        self.l3 = snu_layer.tConv_SNU(in_channels=4, out_channels=16, kernel_size=2,stride=2, l_tau=l_tau, soft=soft, gpu=gpu)
+        self.bntt3 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+        self.l4 = snu_layer.tConv_SNU(in_channels=16, out_channels=1, kernel_size=2, stride=2, l_tau=l_tau, soft=soft, gpu=gpu)
+        self.bntt4 = nn.ModuleList([nn.BatchNorm2d(1, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+
 
     def _reset_state(self):
         self.l1.reset_state()
@@ -51,8 +56,8 @@ class SNU_Network(torch.nn.Module):
         #print("intersection.shape : ",intersection.shape)
         iou = (intersection + smooth) / (union + smooth)
         #print(" in IOU",iou)
-        threshold = np.ceil(np.clip(20*(iou-0.3),0,10))/10
-        return threshold
+        #threshold = np.ceil(np.clip(20*(iou),0,10))/10
+        return iou
         
     def forward(self, x, y):
         loss = None
@@ -60,7 +65,7 @@ class SNU_Network(torch.nn.Module):
         sum_out = None
         dtype = torch.float
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        out = torch.zeros((128, 1, 64, 64), device=device, dtype=dtype)
+        out = torch.zeros((64, 1, 64, 64), device=device, dtype=dtype)
         out_rec = [out]
         log_softmax_fn = nn.LogSoftmax(dim=1)
         loss_fn = nn.NLLLoss()
@@ -81,16 +86,17 @@ class SNU_Network(torch.nn.Module):
             
            
             h1 = self.l1(x_t) # h1 :  torch.Size([256, 16, 64, 64])
-            
+            h1 = self.bntt1[t](h1)
             h1 = F.max_pool2d(h1, 2) #h1_ :  torch.Size([256, 16, 32, 32])
 
             h2 = self.l2(h1) #h2 :  torch.Size([256, 4, 32, 32])
-
+            h2 = self.bntt2[t](h2)
             h2 = F.max_pool2d(h2, 2)#h2 :  torch.Size([256, 16, 16, 16])
 
             h3 = self.l3(h2)
-
+            h3 = self.bntt3[t](h3)
             out = self.l4(h3) #out.shape torch.Size([256, 10]) # [バッチサイズ,output.shape]
+            out = self.bntt4[t](out)
             #print("out.shape",out.shape) #out[0].shape torch.Size([10])
             #print("sum out[0]:",sum(out[0]))  #tensor([1., 0., 1., 0., 1., 0., 1., 1., 0., 1.], device='cuda:0',
 
@@ -111,7 +117,7 @@ class SNU_Network(torch.nn.Module):
         #m = m/self.num_time
         # m : out_rec(21step)を時間軸で積算したもの
         # 出力mと教師信号yの形式を統一する
-        y = y.reshape(128, 1, 64, 64)
+        y = y.reshape(len(x_t), 1, 64, 64)
         #m = torch.where(m>0,1,0).to(torch.float32)
         y = torch.where(y>0,20,0).to(torch.float32)
         #criterion = nn.CrossEntropyLoss() #MNIST 
