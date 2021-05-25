@@ -85,6 +85,11 @@ function f = put_crater(k,mode)
     model;
     model = round(model,0);
     model;
+   %% ラベルデータとして保存
+    label_data = zeros(size_factor,size_factor);
+    filenum = string(k)
+    filename = "two_craters_label/data_"+filenum
+    save(filename,'model')
     %% 動画 v open
     if mode == 1
         v = VideoWriter('two_craters_image.avi')
