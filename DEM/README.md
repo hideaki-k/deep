@@ -1,7 +1,7 @@
 # DEM生成について
 
 
-## make_craterMake_boulder
+## make_crater.m make_boulder.m
 
 ### **引数(k,mode)**
 k・・は読み出し回数
