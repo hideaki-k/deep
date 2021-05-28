@@ -10,25 +10,37 @@ class DoubleConv(nn.Module):
         super().__init__()
         if not mid_channels:
             mid_channels = out_channels
-        self.double_conv = nn.Sequential(
-            snu_layer.Conv_SNU(in_channels, mid_channels, kernel_size=3, padding=1),
-            snu_layer.Conv_SNU(mid_channels,out_channels, kernel_size=3, padding=1)
-        )
+        
+        self.double_conv1 = snu_layer.Conv_SNU(in_channels, mid_channels, kernel_size=3, padding=1),
+        self.double_conv1.Conv_SNU(mid_channels,out_channels, kernel_size=3, padding=1)
+        
     def forward(self, x):
-        return self.double_conv(x)
+        x1 = self.double_conv1(x)
+        x2 = self.double_conv2(x1)
+        return x2
+         
+    def reset_state(self):
+        self.double_conv1.reset_state()
+        self.double_conv2.reset_state()
+        
 
 class Down(nn.Module):
     """Downscaling with maxpool then double conv"""
 
     def __init__(self, in_channels, out_channels):
         super().__init__()
-        self.maxpool_conv = nn.Sequential(
-            nn.MaxPool2d(2),
-            DoubleConv(in_channels, out_channels)
-        )
+        
+        self.l1 = nn.MaxPool2d(2),
+        self.l2 = DoubleConv(in_channels, out_channels)
+        
 
-        def forward(self, x):
-            return self.maxpool_conv(x)
+    def forward(self, x):
+        x1 = self.l1(x)
+        x2 = self.l2(x1)
+        return x2
+    
+    def reset_state(self):
+        self.l2.reset_state()
 
 class Up(nn.Module):
     """Upscaling then double conv"""
@@ -53,6 +65,10 @@ class Up(nn.Module):
         
         x = torch.cat([x2, x1],dim=1)
         return self.conv(x)
+
+    def reset_state(self):
+        self.up.reset_state()
+        self.conv.reset_state()
     
 class OutConv(nn.Module):
     def __init__(self, in_channels, out_channels):
@@ -61,3 +77,6 @@ class OutConv(nn.Module):
 
     def forward(self,x):
         return self.conv(x)
+
+    def reset_state(self):
+        self.conv.reset_state()

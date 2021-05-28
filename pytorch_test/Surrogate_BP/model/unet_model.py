@@ -21,6 +21,18 @@ class UNet(nn.Module):
         self.up3 = Up(256, 128//factor,bilinear)
         self.up4 = Up(128, 64, bilinear)
         self.outc = OutConv(64, n_classes)
+    
+    def _reset_state(self):
+        self.inc.reset_state()
+        self.down1.reser_state()
+        self.down2.reset_state()
+        self.down3.reset_state()
+        self.down4.reset_state()
+        self.up1.reset_state()
+        self.up2.reset_state()
+        self.up3.reset_state()
+        self.up4.reset_state()
+        self.outc.reset_state()
 
     def forward(self, x):
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
