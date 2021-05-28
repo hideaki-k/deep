@@ -2,24 +2,24 @@
 
 function f = make_crater(k,mode)
    % fはモード0:なし、モード1は動画生成、モード2：3次元プロット
-    f = mode
-    size_factor = 64
-    center = size_factor/2
+    f = mode;
+    size_factor = 64;
+    center = size_factor/2;
     model = zeros(size_factor,size_factor);
 
 
-    R = 15 + abs(5*randn(1))
+    R = 15 + abs(5*randn(1));
    % H_r = 150 + abs(5*randn())
-    H_ro = 0.036*(2*R)^1.014
-    H_r = H_ro
-    H_c = 0.196*(2*R)^1.010 - H_ro 
-    W_r = 0.257*(2*R)^1.011
+    H_ro = 0.036*(2*R)^1.014;
+    H_r = H_ro;
+    H_c = 0.196*(2*R)^1.010 - H_ro; 
+    W_r = 0.257*(2*R)^1.011;
     % RANGE
 
-    alpha = (H_c+H_r)*R/(H_c+H_ro)
-    beta = R+(1-(H_c+H_r)/(H_c+H_ro))*W_r
+    alpha = (H_c+H_r)*R/(H_c+H_ro);
+    beta = R+(1-(H_c+H_r)/(H_c+H_ro))*W_r;
 
-    A = -3*R^3 + 2*R^2*beta + 2*R*beta^2 + 2*beta^3
+    A = -3*R^3 + 2*R^2*beta + 2*R*beta^2 + 2*beta^3;
 
     for i =  1:1:size_factor
         for j = 1:1:size_factor
@@ -51,7 +51,7 @@ function f = make_crater(k,mode)
         s = surface(model);
         s.EdgeColor = 'none';
         zlim([-50 50])
-        %colorbar
+        colorbar
         view(3)
     end
 %   
