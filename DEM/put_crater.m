@@ -6,6 +6,7 @@ function f = put_crater(k,mode)
 
 
     model = zeros(size_factor,size_factor);
+    
 
 
     R = 50 + abs(5*randn(1)); %クレータ半径
@@ -28,7 +29,7 @@ function f = put_crater(k,mode)
     while 1
         x_center_2 = 500*rand(1);
         y_center_2 = 500*rand(1);
-        if sqrt(abs(x_center-x_center_2)^2) + sqrt(abs(y_center-y_center_2)^2) > R
+        if sqrt(abs(x_center-x_center_2)^2) + sqrt(abs(y_center-y_center_2)^2) > 4*R
             break
         end
     end
@@ -76,7 +77,7 @@ function f = put_crater(k,mode)
                  else    
                    % h = H_r*(R+W_r)^3/((R+W_r)^3-R^3)*(r/R)^(-3) - (H_r*R^3)/((R+W_r)^3-R^3);
                     %h = h + H_r*(R+W_r)^3/((R+W_r)^3-R^3)*(r_/R)^(-3) - (H_r*R^3)/((R+W_r)^3-R^3);
-                    h = 0;
+                    h = -1;
                  end
 
                  model(i,j) = h;
@@ -109,7 +110,7 @@ function f = put_crater(k,mode)
     time = 0;
     lidar_data = zeros(size_factor,size_factor);
     time_data = zeros(size_factor,size_factor);
-    for i = 3:-1:-23
+    for i = 3:-1:-17
         time = time+1;
         lidar_data(model==i)=1;
         time_data(:,:,time) = lidar_data;
