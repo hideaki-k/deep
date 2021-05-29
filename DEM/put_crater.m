@@ -1,7 +1,7 @@
 function f = put_crater(k,mode)   
     f = mode;
     %% init parameter
-    size_factor = 512;
+    size_factor = 128;
     num_crater = 2;
 
 
@@ -9,7 +9,7 @@ function f = put_crater(k,mode)
     
 
 
-    R = 50 + abs(5*randn(1)); %クレータ半径
+    R = 10 + abs(randn(1)); %クレータ半径
     % H_r = 150 + abs(5*randn())
     H_ro = 0.036*(2*R)^1.014;
     H_r = H_ro;
@@ -19,16 +19,16 @@ function f = put_crater(k,mode)
     % RANGE
     alpha = (H_c+H_r)*R/(H_c+H_ro); %クレータ内縁
     beta = R+(1-(H_c+H_r)/(H_c+H_ro))*W_r ;%クレータ外縁
-    dist_to_zero =200; %標高ゼロまでの距離
+    dist_to_zero =20; %標高ゼロまでの距離
     A = -3*R^3 + 2*R^2*beta + 2*R*beta^2 + 2*beta^3;
 
-    x_center = size_factor/2+100*randn(1);
-    y_center = size_factor/2+100*randn(1);
+    x_center = size_factor/2+30*randn(1);
+    y_center = size_factor/2+30*randn(1);
 
     %% 生成したクレータが近接した場合に削除する処理
     while 1
-        x_center_2 = 500*rand(1);
-        y_center_2 = 500*rand(1);
+        x_center_2 = (size_factor-0.1*size_factor)*rand(1);
+        y_center_2 = (size_factor-0.1*size_factor)*rand(1);
         if sqrt(abs(x_center-x_center_2)^2) + sqrt(abs(y_center-y_center_2)^2) > 4*R
             break
         end
@@ -102,7 +102,7 @@ function f = put_crater(k,mode)
         figure(1)
         s = surface(model);
         s.EdgeColor = 'none';
-        zlim([-100 100])
+        zlim([-20 10])
         colorbar
         view(3)
     end
@@ -110,7 +110,7 @@ function f = put_crater(k,mode)
     time = 0;
     lidar_data = zeros(size_factor,size_factor);
     time_data = zeros(size_factor,size_factor);
-    for i = 3:-1:-17
+    for i = 4:-1:-6
         time = time+1;
         lidar_data(model==i)=1;
         time_data(:,:,time) = lidar_data;
