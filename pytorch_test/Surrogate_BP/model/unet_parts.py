@@ -2,8 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import sys
-sys.append('C:\Users\aki\Documents\GitHub\deep\pytorch_test\snu\model')
-import snu_layer
+from . import snu_layer
 
 class DoubleConv(nn.Module):
     def __init__(self, in_channels, out_channels, mid_channels=None):
@@ -11,8 +10,8 @@ class DoubleConv(nn.Module):
         if not mid_channels:
             mid_channels = out_channels
         
-        self.double_conv1 = snu_layer.Conv_SNU(in_channels, mid_channels, kernel_size=3, padding=1),
-        self.double_conv1.Conv_SNU(mid_channels,out_channels, kernel_size=3, padding=1)
+        self.double_conv1 = snu_layer.Conv_SNU(in_channels, mid_channels, kernel_size=3, padding=1)       
+        self.double_conv2 = snu_layer.Conv_SNU(mid_channels,out_channels, kernel_size=3, padding=1)
         
     def forward(self, x):
         x1 = self.double_conv1(x)
@@ -30,7 +29,7 @@ class Down(nn.Module):
     def __init__(self, in_channels, out_channels):
         super().__init__()
         
-        self.l1 = nn.MaxPool2d(2),
+        self.l1 = nn.MaxPool2d(2)
         self.l2 = DoubleConv(in_channels, out_channels)
         
 
@@ -67,7 +66,6 @@ class Up(nn.Module):
         return self.conv(x)
 
     def reset_state(self):
-        self.up.reset_state()
         self.conv.reset_state()
     
 class OutConv(nn.Module):

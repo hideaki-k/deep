@@ -167,8 +167,8 @@ class Conv_SNU(nn.Module):
         else:
             dtype = torch.float
             device=torch.device("cpu")
-        self.oh = int(((shape[1] + 2*self.padding - self.kernel_size)/self.stride) + 1) # OH=H+2*P-FH/s +1
-        self.ow = int(((shape[2] + 2*self.padding - self.kernel_size)/self.stride) + 1)
+        self.oh = int(((shape[2] + 2*self.padding - self.kernel_size)/self.stride) + 1) # OH=H+2*P-FH/s +1
+        self.ow = int(((shape[3] + 2*self.padding - self.kernel_size)/self.stride) + 1)
         ###########\dem_conv_classification.py
         self.s = torch.zeros((shape[0], self.out_channels, self.oh, self.ow),device=device,dtype=dtype)
         self.y = torch.zeros((shape[0], self.out_channels, self.oh, self.ow),device=device,dtype=dtype)
@@ -178,7 +178,7 @@ class Conv_SNU(nn.Module):
         
     
     def forward(self,x):
-        print("x in snu.shape",x.shape)
+        #print("x in snu.shape",x.shape)
         if self.s is None:
             #print("self.s is none")
             self.initialize_state(x.shape)
@@ -210,7 +210,7 @@ class Conv_SNU(nn.Module):
 
             #print("s.shape:", s.shape)
             #print("self.b.shape:", self.b.shape)
-            #print("self.initial_bias.shape:",self.initial_bias.shape)
+            
             #print("self.b.shape !!!!!!!!!!!!!!!! ", self.b[(...,) + (None,) * (s.ndim - self.b.ndim - axis)].shape)
             bias = s + self.b[(...,) + (None,) * (s.ndim - self.b.ndim - axis)] #error!! two types
             #print("bias:",bias)

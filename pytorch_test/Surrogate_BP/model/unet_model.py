@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-
+from .unet_parts import *
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=True, num_time=20):
+    def __init__(self, n_channels, n_classes, bilinear=True, num_time=10, gpu=True):
         super(UNet, self).__init__()
         self.n_channels = n_channels
         self.n_classes = n_classes
@@ -24,7 +24,7 @@ class UNet(nn.Module):
     
     def _reset_state(self):
         self.inc.reset_state()
-        self.down1.reser_state()
+        self.down1.reset_state()
         self.down2.reset_state()
         self.down3.reset_state()
         self.down4.reset_state()
@@ -34,18 +34,21 @@ class UNet(nn.Module):
         self.up4.reset_state()
         self.outc.reset_state()
 
-    def forward(self, x):
+    def forward(self, x_timeline):
         device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-        out = torch.zeros((64,1,512,512), device=device, dtype=torch.float)
+        out = torch.zeros((x_timeline.shape[0],1,128,128), device=device, dtype=torch.float)
         out_rec = [out]
 
         self._reset_state()
 
         for t in range(self.num_time):
-            x_t = x[:,:,t]
-            x_t = x_t.reshape((len(x_t),1,512,512))
 
-            x1 = self.inc(x)
+            #print('x shape:',x_timeline.shape) #([2, 512, 512, 21])
+            x_t = x_timeline[:,:,:,t]
+            #print("x_t",x_t.shape)
+            x_t = x_t.reshape((len(x_t),1,128,128)) 
+            #print('x_t shape',x_t.shape)
+            x1 = self.inc(x_t)
             x2 = self.down1(x1)
             x3 = self.down2(x2)
             x4 = self.down3(x3)
@@ -55,6 +58,8 @@ class UNet(nn.Module):
             x = self.up3(x, x2)
             x = self.up4(x, x1)
             out = self.outc(x)
+            #print("====")
+            #print("out",out.shape)
             out_rec.append(out)
 
         out_rec = torch.stack(out_rec,dim=1)
