@@ -20,8 +20,8 @@ plt.imshow(img)
 plt.show()
 """
 ##### image　を見たいときはコメントアウトを外してください
-
-name = scipy.io.loadmat('image/img_100.mat')
+path = 'ToF_image/img_100.mat'
+name = scipy.io.loadmat(path)
 print(name)
 
 print(type(name))
@@ -36,8 +36,8 @@ print(name['name'][:,:,1])
 img = name['name'][:,:,1]
 np.set_printoptions(threshold=np.inf)
 print(img)
-"""
-N = 100
+
+N = 20
 fig, ax = plt.subplots()
 def update(i):
     img = name['name'][:,:,i]
@@ -45,6 +45,6 @@ def update(i):
     plt.clf()
     
     plt.imshow(img,cmap='gray')
-hoge = animation.FuncAnimation(fig, update, np.arange(1,  N), interval=25)  # 代入しないと消される
+ani = animation.FuncAnimation(fig, update, np.arange(1,  N), interval=25)  # 代入しないと消される
+ani.save(str(path)+'.gif',writer='imagemagick')
 plt.show()
-"""
