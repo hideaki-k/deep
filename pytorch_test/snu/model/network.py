@@ -8,7 +8,7 @@ import torchvision
 from . import snu_layer
 import numpy as np
 from torchsummary import summary
-
+import matplotlib.pyplot as plt
 # Network definition
 # 新実装(4/25~)
 class SNU_Network(torch.nn.Module):
@@ -80,23 +80,30 @@ class SNU_Network(torch.nn.Module):
         for t in range(self.num_time):
             x_t = x[:,:,t]  #torch.Size([256, 784])
             x_t = x_t.reshape((len(x_t), 1, 64, 64))
-            #print("x_t[0] shape",x_t[0].shape)
-            #print("sum x_t[0]",sum(x_t[0]))
-            #print("t : ",t)
-            
-           
-            h1 = self.l1(x_t) # h1 :  torch.Size([256, 16, 64, 64])
-            h1 = self.bntt1[t](h1)
+            """
+            x_t_=x_t.to('cpu').detach().numpy().copy()
+            print("x_t_ shape",x_t_.shape)
+            plt.imshow(x_t_[0,0,:,:])
+            plt.show()
+            """
+            h1 = self.l1(x_t) # h1 :  torch.Size([256, 16, 64, 64])  
+            """   
+            h1_=h1.to('cpu').detach().numpy().copy()
+            print("h1_ shape",h1_.shape)
+            plt.imshow(h1_[0,0,:,:])
+            plt.show()
+            """
+            #h1 = self.bntt1[t](h1)
             h1 = F.max_pool2d(h1, 2) #h1_ :  torch.Size([256, 16, 32, 32])
 
             h2 = self.l2(h1) #h2 :  torch.Size([256, 4, 32, 32])
-            h2 = self.bntt2[t](h2)
+           # h2 = self.bntt2[t](h2)
             h2 = F.max_pool2d(h2, 2)#h2 :  torch.Size([256, 16, 16, 16])
 
             h3 = self.l3(h2)
-            h3 = self.bntt3[t](h3)
+            #h3 = self.bntt3[t](h3)
             out = self.l4(h3) #out.shape torch.Size([256, 10]) # [バッチサイズ,output.shape]
-            out = self.bntt4[t](out)
+           # out = self.bntt4[t](out)
             #print("out.shape",out.shape) #out[0].shape torch.Size([10])
             #print("sum out[0]:",sum(out[0]))  #tensor([1., 0., 1., 0., 1., 0., 1., 1., 0., 1.], device='cuda:0',
 
@@ -286,12 +293,23 @@ class Conv_SNU_Network_classification(torch.nn.Module):
             x_t = x[:,:,t]  #torch.Size([256, 784])
             #print("x_t : ",x_t.shape)
             x_t = x_t.reshape((len(x_t), 1, 64, 64))
-            #print("x_t : ",x_t.shape)
-
+            #####
+            fig = plt.figure(figsize=(12,8))
+            ax1 = fig.add_subplot(121)
+            x_t_=x_t.to('cpu').detach().numpy().copy()
+            print("x_t_ shape",x_t_.shape)
+            ax1 = plt.imshow(x_t_[0,0,:,:])
+            ax1 = plt.title("input:"+str(t)+"")
             
             # 第一層　畳み込み
             h1 = self.cn1(x_t) 
-            #print("h1 :",h1.shape)
+            #####
+            h1_=h1.to('cpu').detach().numpy().copy()
+            print("h1_ shape",h1_.shape)
+            ax2 = fig.add_subplot(122)
+            ax2 = plt.imshow(h1_[0,0,:,:])
+            ax2 = plt.title("after conv")
+            plt.show()
             # 第二層 最大プーリング
             h2 = F.max_pool2d(h1, 2)
             #print("h2 :",h2.shape)
