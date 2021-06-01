@@ -32,14 +32,14 @@ def rectangle_record(x,num_time=10,data_id=2):
     ims = []
 
     for i in range(num_time):
-        print("x[data_id] shape",x[data_id].shape)
+        print("inputs_[data_id] shape",x[data_id].shape)
         print(x[data_id][:,i].reshape(64,64).shape)
         im=plt.imshow(x[data_id][:,i].reshape(64,64), cmap=plt.cm.gray_r,animated=True)
         ims.append([im])
         #plt.show()
         #print(ims)
         ani = animation.ArtistAnimation(fig, ims, interval=100)
-        fig1=plt.pause(0.001)
+        fig1=plt.pause(0.01)
         #Gifアニメーションのために画像をためます
         plt.savefig(str(new_dir_path)+"/original_image_"+str(i)+".png")
         dst = cv2.imread(str(new_dir_path)+"/original_image_"+str(i)+'.png')
@@ -57,16 +57,17 @@ def record(x,num_time=10,data_id=2): # x : output
     out = cv2.VideoWriter(OUT_FILE_NAME, int(fourcc), int(10), (int(cols), int(rows)))
     fig = plt.figure()
     ims = []
+    print("result shape",x.shape)
 
     for i in range(num_time):
-        print(x[data_id][i].reshape(64,64))
-        print("sum:",sum(x[data_id][i]))
+        #print(x[data_id][i].reshape(64,64))
+        #print("sum:",sum(x[data_id][i]))
         im=plt.imshow(x[data_id][i].reshape(64,64), cmap=plt.cm.gray_r,animated=True)
         ims.append([im])
         #plt.show()
         #print(ims)
         ani = animation.ArtistAnimation(fig, ims, interval=100)
-        fig1=plt.pause(0.001)
+        fig1=plt.pause(0.01)
 
         #spk = x[data_id][i].reshape(64,64)
         plt.savefig(str(new_dir_path)+"/result_image_"+str(i)+'.png')
