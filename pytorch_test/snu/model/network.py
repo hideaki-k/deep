@@ -10,27 +10,26 @@ import numpy as np
 from torchsummary import summary
 import matplotlib.pyplot as plt
 # Network definition
-# 新実装(4/25~)
+# 新実装(4/25~) dem_autoencoder_segmentation
 class SNU_Network(torch.nn.Module):
-    def __init__(self, n_in=784, n_mid=256, n_out=10,
-                 num_time=20, l_tau=0.8, soft=False, gpu=False,
+    def __init__(self, num_time=10, l_tau=0.8, soft=False, gpu=False,
                  test_mode=False):
         super(SNU_Network, self).__init__()
 
-        self.n_out = n_out
+        
         self.num_time = num_time
-        self.gamma = (1/(num_time*n_out))*1e-3
+        #self.gamma = (1/(num_time*n_out))*1e-3
         self.test_mode = test_mode
         # Encoder layers
         self.l1 = snu_layer.Conv_SNU(in_channels=1, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, gpu=gpu)
-        self.bntt1 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+        #self.bntt1 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
         self.l2 = snu_layer.Conv_SNU(in_channels=16, out_channels=4, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, gpu=gpu)
-        self.bntt2 = nn.ModuleList([nn.BatchNorm2d(4, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+        #self.bntt2 = nn.ModuleList([nn.BatchNorm2d(4, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
         # Decoder layers
         self.l3 = snu_layer.tConv_SNU(in_channels=4, out_channels=16, kernel_size=2,stride=2, l_tau=l_tau, soft=soft, gpu=gpu)
-        self.bntt3 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+        #self.bntt3 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
         self.l4 = snu_layer.tConv_SNU(in_channels=16, out_channels=1, kernel_size=2, stride=2, l_tau=l_tau, soft=soft, gpu=gpu)
-        self.bntt4 = nn.ModuleList([nn.BatchNorm2d(1, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+        #self.bntt4 = nn.ModuleList([nn.BatchNorm2d(1, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
 
 
     def _reset_state(self):
@@ -80,17 +79,20 @@ class SNU_Network(torch.nn.Module):
         for t in range(self.num_time):
             x_t = x[:,:,t]  #torch.Size([256, 784])
             x_t = x_t.reshape((len(x_t), 1, 64, 64))
-            """
-            x_t_=x_t.to('cpu').detach().numpy().copy()
-            print("x_t_ shape",x_t_.shape)
-            plt.imshow(x_t_[0,0,:,:])
-            plt.show()
-            """
+            #print("x_t : ",x_t.shape)
             h1 = self.l1(x_t) # h1 :  torch.Size([256, 16, 64, 64])  
-            """   
+            """
+            fig = plt.figure(figsize=(12,8))
+            ax1 = fig.add_subplot(121)
+            x_t_=x_t.to('cpu').detach().numpy().copy()
+            
+            ax1 = plt.imshow(x_t_[0,0,:,:])
+            ax1 = plt.title("input :"+str(t)+"")
+            
             h1_=h1.to('cpu').detach().numpy().copy()
-            print("h1_ shape",h1_.shape)
-            plt.imshow(h1_[0,0,:,:])
+            ax2 = fig.add_subplot(122)
+            ax2 = plt.imshow(h1_[0,0,:,:])
+            ax2 = plt.title("after conv")
             plt.show()
             """
             #h1 = self.bntt1[t](h1)
