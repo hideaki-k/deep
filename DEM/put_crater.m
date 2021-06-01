@@ -1,7 +1,7 @@
 function f = put_crater(k,mode)   
     f = mode;
     %% init parameter
-    size_factor = 128;
+    size_factor = 64;
     num_crater = 2;
 
 
@@ -22,8 +22,8 @@ function f = put_crater(k,mode)
     dist_to_zero =20; %標高ゼロまでの距離
     A = -3*R^3 + 2*R^2*beta + 2*R*beta^2 + 2*beta^3;
 
-    x_center = size_factor/2+30*randn(1);
-    y_center = size_factor/2+30*randn(1);
+    x_center = size_factor/2+15*randn(1);
+    y_center = size_factor/2+15*randn(1);
 
     %% 生成したクレータが近接した場合に削除する処理
     while 1
@@ -128,6 +128,6 @@ function f = put_crater(k,mode)
         close(v);
     end
     filenum = string(k)
-    filename = "two_craters_image/data_"+filenum;
+    filename = string(size_factor)+"pix_two_craters_image/data_"+filenum;
     save(filename,'time_data');
 end
