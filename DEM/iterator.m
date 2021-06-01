@@ -1,8 +1,8 @@
-for i=1:1:12800
-    f = put_crater(i,0);
+for i=1:1:1
+    f = put_crater(i,2);
    %f =  make_crater(i,2)
    %f =  make_crater(i,2)
-   %モード0:なし、モード1は動画生成、モード2：3次元プロット
+   %モード0:LOGデータ保存、モード1は動画生成、モード2：3次元プロット
 end
 
 function f = count(i)
