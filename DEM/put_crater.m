@@ -88,9 +88,9 @@ function f = put_crater(k,mode)
     model;
    %% ラベルデータとして保存
     label_data = zeros(size_factor,size_factor);
-    label_data(model<-3)=1;
+    label_data(model<-1)=1;
     filenum = string(k);
-    filename = "two_craters_label/data_"+filenum;
+    filename = string(size_factor)+"pix_two_craters_label/label_"+filenum;
     save(filename,'label_data');
     %% 動画 v open
     if mode == 1
@@ -127,7 +127,7 @@ function f = put_crater(k,mode)
     if mode == 1
         close(v);
     end
-    filenum = string(k)
-    filename = string(size_factor)+"pix_two_craters_image/data_"+filenum;
+    filenum = string(k);
+    filename = string(size_factor)+"pix_two_craters_image/image_"+filenum
     save(filename,'time_data');
 end
