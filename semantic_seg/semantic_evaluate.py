@@ -28,15 +28,15 @@ class LoadDataset(torch.utils.data.Dataset):
         return len(self.df)
 
     def __getitem__(self, i):
-        file = self.df['id'][i]
-        image = scipy.io.loadmat(file)
+        
+        image = scipy.io.loadmat(self.df['id'][i])
         label = scipy.io.loadmat(self.df['label'][i])
 
-        image = image['name']
-        label = label['name']
+        image = image['time_data']
+        label = label['label_data']
         #print("image : ",image.shape)
         #print("label : ",label.shape)
-        image = image.reshape(4096,20)
+        image = image.reshape(4096,11)
         #print("image : ",image.shape)
         image = image.astype(np.float32)
         #label = label.astype(np.int64)
@@ -46,7 +46,7 @@ class LoadDataset(torch.utils.data.Dataset):
         return image, label
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     
-model = network.SNU_Network(gpu=True)
+model = network.SNU_Network(num_time=10,gpu=True)
 model = model.to(device)
 model_path = "models/models_state_dict_end.pth"
 model.load_state_dict(torch.load(model_path))
@@ -55,7 +55,7 @@ print("load model")
 # test_img : 評価用画像生成
 # inputs_, label_ = test_img() 
 valid_dataset = LoadDataset("semantic_img_loc.csv")
-valid_iter = DataLoader(valid_dataset, batch_size=128, shuffle=False)
+valid_iter = DataLoader(valid_dataset, batch_size=64, shuffle=False)
 for i,(inputs, labels) in enumerate(valid_iter, 0):
     inputs_ = inputs
     label_ = labels
@@ -76,10 +76,14 @@ inputs_ = inputs_.detach().clone().numpy()
 # MP4  レコード
 
 data_id = 1
-num_time = 20
+num_time = 10
 
+#ディレクトリ生成
 mk_txt(model_path)
+#results(最終層出力)の可視化
 heatmap(result,num_time=num_time,data_id=data_id)
 
+# inputs の可視化
 rectangle_record(inputs_,num_time=num_time,data_id=data_id)
+# result（最終層出力）の可視化
 record(result,num_time=num_time,data_id=data_id)
