@@ -13,6 +13,7 @@ from torch import cuda
 
 import numpy 
 from . import step_func
+#import step_func
 
 class SNU(nn.Module):
     def __init__(self, in_channels, out_channels, l_tau=0.8, soft=False, rec=False, nobias=False, initial_bias=-0.5, gpu=True):
