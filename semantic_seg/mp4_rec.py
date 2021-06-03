@@ -47,6 +47,14 @@ def rectangle_record(x,num_time=10,data_id=2):
         #print(i)
     out.release()
 
+def label_save(label,data_id):
+    print("label shape",label.shape)
+    image = label[data_id].reshape(64,64)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.imshow(image)
+    fig.savefig(str(new_dir_path)+'/label.png')
+
 
 OUT_FILE_NAME = str(new_dir_path)+"/result_output_video.mp4"
 #OUT_FILE_NAME = "output_video.avi"
