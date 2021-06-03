@@ -13,7 +13,7 @@ sys.path.append(r"C:\Users\aki\Documents\GitHub\deep\pytorch_test\snu")
 from model import snu_layer
 from model import network
 from tqdm import tqdm
-from mp4_rec import mk_txt, record, rectangle_record, heatmap
+from mp4_rec import mk_txt, record, rectangle_record, heatmap,label_save
 import pandas as pd
 import scipy.io
 from torchsummary import summary
@@ -64,7 +64,7 @@ label_ = label_.to(device)
 print("inputs_",inputs_.shape) # 
 print("label_",label_.shape)
 
-label, pred, result, _ = model(inputs_, label_)
+_, pred, result, _ = model(inputs_, label_)
 print("result shape : ",result.shape) #torch.Size([128, 21, 1, 64, 64])
 print("inputs_ shape : ",inputs_.shape) #torch.Size([128, 4096, 20])
 
@@ -73,6 +73,8 @@ result = result.to(device2)
 result = result.detach().clone().numpy()
 inputs_ = inputs_.to(device2)
 inputs_ = inputs_.detach().clone().numpy() 
+label_ = label_.to(device2)
+label_ = label_.detach().clone().numpy() 
 # MP4  レコード
 
 data_id = 1
@@ -87,3 +89,5 @@ heatmap(result,num_time=num_time,data_id=data_id)
 rectangle_record(inputs_,num_time=num_time,data_id=data_id)
 # result（最終層出力）の可視化
 record(result,num_time=num_time,data_id=data_id)
+# label　の可視化
+label_save(label_,data_id=data_id)
