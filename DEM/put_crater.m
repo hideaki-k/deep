@@ -6,7 +6,7 @@ function f = put_crater(k,mode)
 
 
     model = zeros(size_factor,size_factor);
-    
+    label_data = zeros(size_factor,size_factor);
 
 
     R = 10 + abs(randn(1)); %クレータ半径
@@ -34,7 +34,7 @@ function f = put_crater(k,mode)
         end
     end
 
-    %%
+    %% クレータ付与
         for i =  1:1:size_factor
             for j = 1:1:size_factor
 
@@ -44,7 +44,7 @@ function f = put_crater(k,mode)
 
 
                  if r <= alpha || r_ <= alpha
-
+                     label_data(i,j) = 1;
                      if r <= alpha
                         h = (H_c+H_ro)*(r^2/R^2)-H_c;
 
@@ -88,8 +88,7 @@ function f = put_crater(k,mode)
     model;
    %% ラベルデータとして保存
    if mode ==0
-        label_data = zeros(size_factor,size_factor);
-        label_data(model<-1)=1;
+
         filenum = string(k);
         filename = string(size_factor)+"pix_two_craters_label/label_"+filenum;
         save(filename,'label_data');
@@ -104,7 +103,7 @@ function f = put_crater(k,mode)
         figure(1)
         s = surface(model);
         s.EdgeColor = 'none';
-        zlim([-20 10])
+        zlim([-10 10])
         colorbar
         view(3)
     end
