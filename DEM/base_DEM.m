@@ -4,6 +4,7 @@ function f=bade_DEM(k,mode)
     size_factor = 64;
     angle = rand(1)*10;
     model = zeros(size_factor,size_factor);
+    label_data = zeros(size_factor,size_factor);
     direct = round(rand(1),0);
     up_down= round(rand(1),0);
     if up_down == 1
@@ -39,16 +40,20 @@ function f=bade_DEM(k,mode)
     dist_to_zero =20; %標高ゼロまでの距離
     A = -3*R^3 + 2*R^2*beta + 2*R*beta^2 + 2*beta^3;
     % クレータ１の中心座標
-    x_center = size_factor/2+20*randn(1);
-    y_center = size_factor/2+20*randn(1);
+    x_center = size_factor/2+20*rand(1);
+    y_center = size_factor/2+20*rand(1);
 
-    %% 生成したクレータが近接した場合に削除する処理
+    %% 生成したクレータ2が近接した場合に削除する処理
+    cnt = 0;
     while 1
-        x_center_2 = size_factor/2-20*randn(1);
-        y_center_2 = size_factor/2-20*randn(1);
+        x_center_2 = size_factor/2-20*rand(1);
+        y_center_2 = size_factor/2-20*rand(1);
         if sqrt(abs(x_center-x_center_2)^2) + sqrt(abs(y_center-y_center_2)^2) > 3.5*R
             break
+        elseif cnt >=100
+            break
         end
+        cnt=cnt+1
     end
     %% クレータ付与
     for i =  1:1:size_factor
@@ -60,7 +65,7 @@ function f=bade_DEM(k,mode)
 
 
              if r <= alpha || r_ <= alpha
-
+                 label_data(i,j) = 1;
                  if r <= alpha
                     h = (H_c+H_ro)*(r^2/R^2)-H_c;
 
@@ -105,8 +110,8 @@ function f=bade_DEM(k,mode)
     
     %% ラベルデータとして保存
     if mode ==0
-        label_data = zeros(size_factor,size_factor);
-        label_data(model<-1)=1;
+        
+        
         filenum = string(k);
         filename = string(size_factor)+"pix_slope_craters_label/label_"+filenum;
         save(filename,'label_data');
@@ -115,6 +120,14 @@ function f=bade_DEM(k,mode)
     if mode==2
         figure(1)
         s = surface(model);
+        s.EdgeColor = 'none';
+        xlabel('X');
+        ylabel('Y');
+        zlim([-10 24])
+        colorbar
+        view(3)
+        figure(2)
+        s = surface(label_data);
         s.EdgeColor = 'none';
         xlabel('X');
         ylabel('Y');
