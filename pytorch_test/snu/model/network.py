@@ -46,17 +46,18 @@ class SNU_Network(torch.nn.Module):
         outputs = outputs.squeeze(1) # BATCH*1*H*W => BATCH*H*W __outputs.shape : (128, 64, 64)
         labels = labels.squeeze(1) #__labels.shape : (128, 64, 64)
         #print("outputs : ",outputs)
-        outputs = np.where(outputs>0,1,0)
-        labels = np.where(labels>0,1,0)
-        #print("outputs : ",outputs)
-        #print("labels",labels)
-        intersection = (np.uint64(outputs) & np.uint64(labels)).sum((1,2)) # will be zero if Trueth=0 or Prediction=0
-        union = (np.uint64(outputs) | np.uint64(labels)).sum((1,2)) # will be zero if both are 0
-        #print("intersection.shape : ",intersection.shape)
-        iou = (intersection + smooth) / (union + smooth)
-        #print(" in IOU",iou)
-        #threshold = np.ceil(np.clip(20*(iou),0,10))/10
-        return iou
+        iou = []
+        cnt = []
+        for i in range(1,6):
+            output = np.where(outputs>i,1,0)
+            label = np.where(labels>0,1,0)
+            intersection = (np.uint64(output) & np.uint64(label)).sum((1,2)) # will be zero if Trueth=0 or Prediction=0
+            union = (np.uint64(output) | np.uint64(label)).sum((1,2)) # will be zero if both are 0
+        
+            iou.append((intersection + smooth) / (union + smooth))
+            cnt.append(i)
+        
+        return iou,cnt
         
     def forward(self, x, y):
         loss = None
@@ -134,12 +135,12 @@ class SNU_Network(torch.nn.Module):
         loss = criterion(m, y)
         #print("loss",loss)
         #loss += self.gamma*torch.sum(m**2)
-        iou = self.iou_score(m, y)
+        iou,cnt= self.iou_score(m, y)
         
         if self.test_mode == True:
             return loss, accuracy, h1_list, h2_list, h3_list, out_list
         else:
-            return loss, m, out_rec, iou
+            return loss, m, out_rec, iou, cnt
         
 
 
