@@ -84,11 +84,11 @@ def record(x,num_time=10,data_id=2): # x : output
         #print(i)
     out.release()
 
-def heatmap(x,num_time=10,data_id=2): # 画像を時間軸方向に積算してヒートマップに
+def heatmap(x,num_time=10,data_id=2,label_img=None): # 画像を時間軸方向に積算してヒートマップに
     x = x[data_id].squeeze(1)
-    print("x",x.shape)
+    print("x",x.shape) # x (11, 64, 64)
     sum_x = np.sum(x,axis=0)
-    print("sum_x",sum_x.shape)
+    print("sum_x",sum_x.shape) # sum_x (64, 64)
     fig = plt.figure()
     ax = fig.add_subplot(111)
     #H = ax.hist2d(sum_x[0],sum_x[1],bins=40,cmap=cm.jet)
@@ -97,10 +97,42 @@ def heatmap(x,num_time=10,data_id=2): # 画像を時間軸方向に積算して�
     ax.set_ylabel('y')
     
     ax.imshow(sum_x,cmap=cm.jet)
-    #fig.colorbar(sum_x,ax=ax)
+    
     #plt.show()  
     plt.savefig(str(new_dir_path)+"/heatmap_image.png")
     print("save heat")
+
+    # visualize IoU
+    label_img = label_img[data_id].reshape(64,64)
+    
+    l = np.zeros((sum_x.shape[0],sum_x.shape[1]))
+    
+    ref_img_5 = np.where(sum_x > 5 , 1, 0)
+    ref_img_3 = np.where(sum_x>3,1,0)
+    IoU_img = label_img + ref_img_5
+    IoU_img_ = label_img + ref_img_3
+    fig = plt.figure(facecolor='azure')
+    ax1 = fig.add_subplot(2,2,1)
+    ax2 = fig.add_subplot(2,2,2)
+   
+    ax3 = fig.add_subplot(2,2,3)
+    ax4 = fig.add_subplot(2,2,4)
+
+    ax1.set_title('laabel')
+    ax1.imshow(label_img)
+
+    ax2.set_title('output')
+    ax2.imshow(ref_img_3)
+
+    ax3.set_title('IoU image(5)')
+    ax3.imshow(IoU_img)
+
+    ax4.set_title('IoU image(3)')
+    ax4.imshow(IoU_img_)
+    plt.tight_layout()
+    plt.savefig(str(new_dir_path)+"/IoU_image.png")
+    
+
 
 if __name__ == '__main__':
     ###ヒートマップとして出力

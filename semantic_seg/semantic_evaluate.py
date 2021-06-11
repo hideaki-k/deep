@@ -82,12 +82,12 @@ num_time = 10
 
 #ディレクトリ生成
 mk_txt(model_path)
+# label　の可視化
+label_save(label_,data_id=data_id)
 #results(最終層出力)の可視化
-heatmap(result,num_time=num_time,data_id=data_id)
+heatmap(result,num_time=num_time,data_id=data_id,label_img=label_)
 
 # inputs の可視化
 rectangle_record(inputs_,num_time=num_time,data_id=data_id)
 # result（最終層出力）の可視化
 record(result,num_time=num_time,data_id=data_id)
-# label　の可視化
-label_save(label_,data_id=data_id)
