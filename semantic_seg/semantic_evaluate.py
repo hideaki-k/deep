@@ -64,7 +64,7 @@ label_ = label_.to(device)
 print("inputs_",inputs_.shape) # 
 print("label_",label_.shape)
 
-_, pred, result, _ = model(inputs_, label_)
+_, pred, result, _, _ = model(inputs_, label_)
 print("result shape : ",result.shape) #torch.Size([128, 21, 1, 64, 64])
 print("inputs_ shape : ",inputs_.shape) #torch.Size([128, 4096, 20])
 
