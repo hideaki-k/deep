@@ -1,5 +1,3 @@
-
-
 function f = make_crater(k,mode)
    % fはモード0:なし、モード1は動画生成、モード2：3次元プロット
     f = mode;
@@ -41,11 +39,9 @@ function f = make_crater(k,mode)
     end
     model;
     model = round(model,0);
-    model;
-    % model = model.*10000
-    % model
-    a = max(model(:)) %22013
-    b = min(model(:)) %5885
+
+    a = max(model(:)); %22013
+    b = a-10;
 %% 
     if mode ==2
         s = surface(model);
@@ -63,9 +59,9 @@ function f = make_crater(k,mode)
 
     time = 0;
     lidar_data = zeros(size_factor,size_factor);
-    time_data = zeros(size_factor,size_factor,20); % 128 128 20 
+    time_data = zeros(size_factor,size_factor,10); % 128 128 20 
 
-    for i =  10:-1:-10
+    for i =  a:-1:b
         time = time + 1;
         lidar_data(model==i) = 1;
         time_data(:,:,time) = lidar_data;
@@ -85,7 +81,7 @@ function f = make_crater(k,mode)
         close(v);
     end
     filenum = string(k)
-    filename = "crater/data_"+filenum
+    filename = "scan_crater/data_"+filenum
     save(filename,'time_data')
     
 
