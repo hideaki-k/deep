@@ -12,9 +12,9 @@ function f = make_bolder_perlin(k,mode)
     yc = 16;
     zc = 0;
 
-    xr = 10+abs(5*randn());
-    yr = 10+abs(5*randn());
-    zr = 7+abs(5*randn());
+    xr = 10+abs(2*randn());
+    yr = 10+abs(2*randn());
+    zr = 5+abs(2*randn());
 
     model = zeros(size_factor,size_factor);
     %% Set the range of area to generate the terrain
