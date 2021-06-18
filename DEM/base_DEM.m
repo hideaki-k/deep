@@ -40,14 +40,14 @@ function f=base_DEM(k,mode)
     dist_to_zero =20; %標高ゼロまでの距離
     A = -3*R^3 + 2*R^2*beta + 2*R*beta^2 + 2*beta^3;
     % クレータ１の中心座標
-    x_center = size_factor/2+20*rand(1);
-    y_center = size_factor/2+20*rand(1);
+    x_center = size_factor/2+20*(-1 + (1+1)*rand(1));
+    y_center = size_factor/2+20*(-1 + (1+1)*rand(1));
 
     %% 生成したクレータ2が近接した場合に削除する処理
     cnt = 0;
     while 1
-        x_center_2 = size_factor/2-20*rand(1);
-        y_center_2 = size_factor/2-20*rand(1);
+        x_center_2 = size_factor/2-20*(-1 + (1+1)*rand(1));
+        y_center_2 = size_factor/2-20*(-1 + (1+1)*rand(1));
         if sqrt(abs(x_center-x_center_2)^2) + sqrt(abs(y_center-y_center_2)^2) > 3.5*R
             break
         elseif cnt >=100
