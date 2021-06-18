@@ -39,7 +39,8 @@ class TrainLoadDataset(torch.utils.data.Dataset):
 
         #label = torch.tensor(label, dtype=torch.float32)
         image = image['time_data']
-        image = image.reshape(4096,21)
+        #image = image.reshape(4096,21) # flash 仕様
+        image = image.reshape(1024,11264) # scan LiDAR　仕様
         #print("image : ",image.shape)
         image = image.astype(np.float32)
         label = label.astype(np.int64)
@@ -56,16 +57,16 @@ print("***************************")
 #print(np.array(train_dataset[0][0][:,:,1])) #([data_id][image or label])
 #print(np.array(train_dataset[0][0].shape))  #[128 128  21]
 
-train_iter = torch.utils.data.DataLoader(train_dataset, batch_size=128, shuffle=True)
+train_iter = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True)
 
 
 # ネットワーク設計
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-model = network.Conv_SNU_Network_classification(gpu=True)
+model = network.Conv_SNU_Network_classification(num_time=1024,gpu=True)
 model = model.to(device)
 print("building model")
 optimizer = optim.Adam(model.parameters(), lr=1e-5)
-epochs = 100
+epochs = 10
 loss_hist = []
 acc_hist = []
 for epoch in range(epochs):

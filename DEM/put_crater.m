@@ -26,12 +26,16 @@ function f = put_crater(k,mode)
     y_center = size_factor/2+15*randn(1);
 
     %% 生成したクレータが近接した場合に削除する処理
+    cnt = 0;
     while 1
-        x_center_2 = (size_factor-0.1*size_factor)*rand(1);
-        y_center_2 = (size_factor-0.1*size_factor)*rand(1);
-        if sqrt(abs(x_center-x_center_2)^2) + sqrt(abs(y_center-y_center_2)^2) > 4*R
+        x_center_2 = size_factor/2-20*rand(1);
+        y_center_2 = size_factor/2-20*rand(1);
+        if sqrt(abs(x_center-x_center_2)^2) + sqrt(abs(y_center-y_center_2)^2) > 3.5*R
+            break
+        elseif cnt >= 100
             break
         end
+        cnt = cnt+1;
     end
 
     %% クレータ付与
