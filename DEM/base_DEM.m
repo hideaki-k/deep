@@ -1,4 +1,4 @@
-function f=bade_DEM(k,mode)
+function f=base_DEM(k,mode)
     f = mode;
     %% init parameter
     size_factor = 64;
