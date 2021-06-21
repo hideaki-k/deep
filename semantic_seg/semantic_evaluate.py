@@ -77,7 +77,7 @@ label_ = label_.to(device2)
 label_ = label_.detach().clone().numpy() 
 # MP4  レコード
 
-data_id = 1
+data_id = 2
 num_time = 10
 
 #ディレクトリ生成
