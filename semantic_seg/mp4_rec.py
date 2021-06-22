@@ -6,6 +6,12 @@ import cv2
 import os 
 import datetime
 import torch
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from matplotlib.animation import PillowWriter
+from matplotlib._version import get_versions as mplv
+from scipy.stats import gaussian_kde
 # rectangle_record ・・学習データ可視化関数
 # record ・・　出力データ可視化関数
 now = datetime.datetime.now()
@@ -17,35 +23,30 @@ OUT_FILE_NAME_ = str(new_dir_path)+"/inputs_output_video.mp4"
 #OUT_FILE_NAME = "output_video.avi"
 def mk_txt(model_name):
     model_name = model_name.replace('models/','')
+    model_name = model_name.replace('/','__')
     model_name = model_name.replace('.pth','')
     path = str(new_dir_path)+"/"+str(model_name)+'.txt'
     f = open(path,'w')
     f.write(model_name)
     f.close()
 
-def rectangle_record(x,num_time=10,data_id=2):
-    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-    dst = cv2.imread('build_img_4_25/image.png') #一度、savefigしてから再読み込み
-    rows,cols,channels = dst.shape
-    out = cv2.VideoWriter(OUT_FILE_NAME_, int(fourcc), int(10), (int(cols), int(rows)))
-    fig = plt.figure()
-    ims = []
+def rectangle_record(x,num_time=20,data_id=2):
 
-    for i in range(num_time):
-        print("inputs_[data_id] shape",x[data_id].shape)
-        print(x[data_id][:,i].reshape(64,64).shape)
-        im=plt.imshow(x[data_id][:,i].reshape(64,64), cmap=plt.cm.gray_r,animated=True)
-        ims.append([im])
-        #plt.show()
-        #print(ims)
-        ani = animation.ArtistAnimation(fig, ims, interval=100)
-        fig1=plt.pause(0.01)
-        #Gifアニメーションのために画像をためます
-        plt.savefig(str(new_dir_path)+"/original_image_"+str(i)+".png")
-        dst = cv2.imread(str(new_dir_path)+"/original_image_"+str(i)+'.png')
-        out.write(dst) #mp4やaviに出力します
+    fig, ax = plt.subplots()
+    N = 20
+    def update(i):
+        if i == 1:
+            print("===========")
+        img = x[data_id][:,i].reshape(64,64)
         #print(i)
-    out.release()
+        
+        plt.clf()
+        
+        plt.imshow(img,cmap='gray')
+    ani = animation.FuncAnimation(fig, update, np.arange(1,  N), interval=1)  # 代入しないと消される
+
+    ani.save(str(new_dir_path)+"/inputs.gif", writer="pillow", fps=10)
+    #plt.show()
 
 def label_save(label,data_id):
     print("label shape",label.shape)
@@ -58,33 +59,26 @@ def label_save(label,data_id):
 
 OUT_FILE_NAME = str(new_dir_path)+"/result_output_video.mp4"
 #OUT_FILE_NAME = "output_video.avi"
-def record(x,num_time=10,data_id=2): # x : output
-    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-    dst = cv2.imread('build_img_4_25/image.png') #一度、savefigしてから再読み込み
-    rows,cols,channels = dst.shape
-    out = cv2.VideoWriter(OUT_FILE_NAME, int(fourcc), int(10), (int(cols), int(rows)))
-    fig = plt.figure()
-    ims = []
-    print("result shape",x.shape)
-
-    for i in range(num_time):
-        #print(x[data_id][i].reshape(64,64))
-        #print("sum:",sum(x[data_id][i]))
-        im=plt.imshow(x[data_id][i].reshape(64,64), cmap=plt.cm.gray_r,animated=True)
-        ims.append([im])
-        #plt.show()
-        #print(ims)
-        ani = animation.ArtistAnimation(fig, ims, interval=100)
-        fig1=plt.pause(0.01)
-
-        #spk = x[data_id][i].reshape(64,64)
-        plt.savefig(str(new_dir_path)+"/result_image_"+str(i)+'.png')
-        dst = cv2.imread(str(new_dir_path)+"/result_image_"+str(i)+'.png')
-        out.write(dst) #mp4やaviに出力します
+def record(x,num_time=20,data_id=2): # x : output
+    print(x[2][1].shape)
+    print(x[2][1][:].shape)
+    fig, ax = plt.subplots()
+    N = 20
+    def update(i):
+        if i == 1:
+            print("===========")
+        img = x[data_id][i].reshape(64,64)
         #print(i)
-    out.release()
+        
+        plt.clf()
+        
+        plt.imshow(img,cmap='gray')
+    ani = animation.FuncAnimation(fig, update, np.arange(1,  N), interval=1)  # 代入しないと消される
 
-def heatmap(x,num_time=10,data_id=2,label_img=None): # 画像を時間軸方向に積算してヒートマップに
+    ani.save(str(new_dir_path)+"/outputs.gif", writer="pillow", fps=10)
+    #plt.show()
+
+def heatmap(x,num_time=20,data_id=2,label_img=None): # 画像を時間軸方向に積算してヒートマップに
     x = x[data_id].squeeze(1)
     print("x",x.shape) # x (11, 64, 64)
     sum_x = np.sum(x,axis=0)
@@ -107,28 +101,45 @@ def heatmap(x,num_time=10,data_id=2,label_img=None): # 画像を時間軸方向�
     
     l = np.zeros((sum_x.shape[0],sum_x.shape[1]))
     
-    ref_img_5 = np.where(sum_x > 5 , 1, 0)
-    ref_img_3 = np.where(sum_x>3,1,0)
-    IoU_img = label_img + ref_img_5
-    IoU_img_ = label_img + ref_img_3
+    ref_img_1 = np.where(sum_x > 1, 0.5, 0)
+    ref_img_3 = np.where(sum_x > 3, 0.5, 0)
+    ref_img_5 = np.where(sum_x > 5 , 0.5, 0)
+    IoU_img_1 = label_img + ref_img_1
+    IoU_img_3 = label_img + ref_img_3
+    IoU_img_5 = label_img + ref_img_5
+
     fig = plt.figure(facecolor='azure')
-    ax1 = fig.add_subplot(2,2,1)
-    ax2 = fig.add_subplot(2,2,2)
-   
-    ax3 = fig.add_subplot(2,2,3)
-    ax4 = fig.add_subplot(2,2,4)
+    ax1 = fig.add_subplot(2,4,1)
+    ax2 = fig.add_subplot(2,4,2)
+    ax3 = fig.add_subplot(2,4,3)
+    ax4 = fig.add_subplot(2,4,4)
 
-    ax1.set_title('laabel')
-    ax1.imshow(label_img)
+    ax5 = fig.add_subplot(2,4,6)
+    ax6 = fig.add_subplot(2,4,7)
+    ax7 = fig.add_subplot(2,4,8)
 
-    ax2.set_title('output')
-    ax2.imshow(ref_img_3)
 
-    ax3.set_title('IoU image(5)')
-    ax3.imshow(IoU_img)
+    ax1.set_title('label')
+    ax1.imshow(label_img,cmap='bwr')
 
-    ax4.set_title('IoU image(3)')
-    ax4.imshow(IoU_img_)
+    ax2.set_title('output(1)')
+    ax2.imshow(ref_img_1,cmap='bwr')
+
+    ax3.set_title('output(3)')
+    ax3.imshow(ref_img_3,cmap='bwr')
+
+    ax4.set_title('output(5)')
+    ax4.imshow(ref_img_5,cmap='bwr')
+
+    ax5.set_title('IOU image(1)')
+    ax5.imshow(IoU_img_1)
+
+    ax6.set_title('IoU image(3)')
+    ax6.imshow(IoU_img_3)
+
+    ax7.set_title('Iou image(5)')
+    ax7.imshow(IoU_img_5)
+
     plt.tight_layout()
     plt.savefig(str(new_dir_path)+"/IoU_image.png")
     
