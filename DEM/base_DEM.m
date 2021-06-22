@@ -2,7 +2,9 @@ function f=base_DEM(k,mode)
     f = mode;
     %% init parameter
     size_factor = 64;
-    angle = rand(1)*10;
+    time_scale = 20;
+    %angle = rand(1)*10;
+    angle = 16;
     model = zeros(size_factor,size_factor);
     label_data = zeros(size_factor,size_factor);
     direct = round(rand(1),0);
@@ -108,14 +110,6 @@ function f=base_DEM(k,mode)
     model = round(model,0);
     model;
     
-    %% ラベルデータとして保存
-    if mode ==0
-        
-        
-        filenum = string(k);
-        filename = string(size_factor)+"pix_slope_craters_label/label_"+filenum;
-        save(filename,'label_data');
-    end
     %% 三次元プロット
     if mode==2
         figure(1)
@@ -126,6 +120,7 @@ function f=base_DEM(k,mode)
         zlim([-10 24])
         colorbar
         view(3)
+        savefig('model')
         figure(2)
         s = surface(label_data);
         s.EdgeColor = 'none';
@@ -134,6 +129,7 @@ function f=base_DEM(k,mode)
         zlim([-10 24])
         colorbar
         view(3)
+        savefig('label')
     end
     %% 動画 v open
 
@@ -144,8 +140,8 @@ function f=base_DEM(k,mode)
     time = 0;
     lidar_data = zeros(size_factor,size_factor);
     time_data = zeros(size_factor,size_factor);
-    max_elevation = max(model(:))
-    min_elevation = max_elevation-10;
+    max_elevation = max(model(:));
+    min_elevation = max_elevation-time_scale;
     for i = max_elevation:-1:min_elevation
         time = time+1;
         lidar_data(model==i)=1;
@@ -166,8 +162,15 @@ function f=base_DEM(k,mode)
 
     %% 教師データとして保存
     if mode == 0
+        folder_name = string(size_factor)+"pix_("+string(angle)+"deg)_craters";
+        mkdir(folder_name);
+        mkdir(folder_name,'image');
+        mkdir(folder_name,'label');
         filenum = string(k);
-        filename = string(size_factor)+"pix_slope_craters_image/image_"+filenum
+        filename = folder_name+"/label/label_"+filenum;
+        save(filename,'label_data');
+     
+        filename = folder_name+"/image/image_"+filenum
         save(filename,'time_data');
     end
 end
