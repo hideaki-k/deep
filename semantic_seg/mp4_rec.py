@@ -101,12 +101,12 @@ def heatmap(x,num_time=20,data_id=2,label_img=None): # 画像を時間軸方向�
     
     l = np.zeros((sum_x.shape[0],sum_x.shape[1]))
     
-    ref_img_1 = np.where(sum_x > 1, 0.5, 0)
+    ref_img_2 = np.where(sum_x > 2, 0.5, 0)
     ref_img_3 = np.where(sum_x > 3, 0.5, 0)
-    ref_img_5 = np.where(sum_x > 5 , 0.5, 0)
-    IoU_img_1 = label_img + ref_img_1
+    ref_img_4 = np.where(sum_x > 4 , 0.5, 0)
+    IoU_img_2 = label_img + ref_img_2
     IoU_img_3 = label_img + ref_img_3
-    IoU_img_5 = label_img + ref_img_5
+    IoU_img_4 = label_img + ref_img_4
 
     fig = plt.figure(facecolor='azure')
     ax1 = fig.add_subplot(2,4,1)
@@ -122,23 +122,23 @@ def heatmap(x,num_time=20,data_id=2,label_img=None): # 画像を時間軸方向�
     ax1.set_title('label')
     ax1.imshow(label_img,cmap='bwr')
 
-    ax2.set_title('output(1)')
-    ax2.imshow(ref_img_1,cmap='bwr')
+    ax2.set_title('output(2)')
+    ax2.imshow(ref_img_2,cmap='bwr')
 
     ax3.set_title('output(3)')
     ax3.imshow(ref_img_3,cmap='bwr')
 
-    ax4.set_title('output(5)')
-    ax4.imshow(ref_img_5,cmap='bwr')
+    ax4.set_title('output(4)')
+    ax4.imshow(ref_img_4,cmap='bwr')
 
-    ax5.set_title('IOU image(1)')
-    ax5.imshow(IoU_img_1)
+    ax5.set_title('IOU image(2)')
+    ax5.imshow(IoU_img_2)
 
     ax6.set_title('IoU image(3)')
     ax6.imshow(IoU_img_3)
 
-    ax7.set_title('Iou image(5)')
-    ax7.imshow(IoU_img_5)
+    ax7.set_title('Iou image(4)')
+    ax7.imshow(IoU_img_4)
 
     plt.tight_layout()
     plt.savefig(str(new_dir_path)+"/IoU_image.png")
