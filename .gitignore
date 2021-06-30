@@ -29,3 +29,16 @@ semantic_seg/build_img/original_image_3.png
 *.pth
 *.asv
 *.jpg
+*.jpg
+*.csv
+*.jpg
+*.jpg
+semantic_seg/models/5_20_withoutBNTT/IOU.jpg
+semantic_seg/models/5_20_withoutBNTT/loss.jpg
+semantic_seg/data/MNIST/raw/train-labels-idx1-ubyte
+semantic_seg/1_log/MNIST/raw/t10k-images-idx3-ubyte
+*.pt
+semantic_seg/1_log/MNIST/raw/t10k-labels-idx1-ubyte
+semantic_seg/1_log/MNIST/raw/train-images-idx3-ubyte
+semantic_seg/1_log/MNIST/raw/train-labels-idx1-ubyte
+*.csv
