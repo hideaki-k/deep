@@ -17,6 +17,7 @@ from tqdm import tqdm
 import pandas as pd
 import scipy.io
 from torchsummary import summary
+import argparse
 class TrainLoadDataset(torch.utils.data.Dataset):
 
     def __init__(self, N=1000, dt=1e-3, num_time=20, max_fr=1000):
@@ -115,15 +116,15 @@ class LoadDataset(torch.utils.data.Dataset):
         return len(self.df)
 
     def __getitem__(self, i):
-        file = self.df['id'][i]
-        image = scipy.io.loadmat(file)
+        
+        image = scipy.io.loadmat(self.df['id'][i])
         label = scipy.io.loadmat(self.df['label'][i])
 
-        image = image['name']
-        label = label['name']
+        image = image['time_data']
+        label = label['label_data']
         #print("image : ",image.shape)
         #print("label : ",label.shape)
-        image = image.reshape(4096,20)
+        image = image.reshape(4096,21)
         #print("image : ",image.shape)
         image = image.astype(np.float32)
         #label = label.astype(np.int64)
@@ -134,74 +135,130 @@ class LoadDataset(torch.utils.data.Dataset):
      
 train_dataset = LoadDataset("semantic_img_loc.csv")
 data_id = 2
+parser = argparse.ArgumentParser()
+parser.add_argument('--batch', '-b', type=int, default=128)
+parser.add_argument('--epoch', '-e', type=int, default=50)
+parser.add_argument('--time', '-t', type=int, default=20,
+                        help='Total simulation time steps.')
+parser.add_argument('--rec', '-r', type=str, default=False)                      
+args = parser.parse_args()
+
+
 print("***************************")
 print(np.array(train_dataset[data_id][0]).shape) #(784, 100) 
-train_iter = DataLoader(train_dataset, batch_size=128, shuffle=True)
+train_iter = DataLoader(train_dataset, batch_size=args.batch, shuffle=False)
 
 # ネットワーク設計
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # オートエンコーダー　
-model = network.SNU_Network(gpu=True)
+model = network.SNU_Network(num_time=args.time,l_tau=0.8,rec=args.rec, gpu=True,batch_size=args.batch)
 model = model.to(device)
 print("building model")
+#print(model.state_dict())
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
-epochs = 100
+epochs = args.epoch
+
 loss_hist = []
-acc_hist = []
+acc_hist_1 = []
+acc_hist_2 = []
+acc_hist_3 = []
+acc_hist_4 = []
+acc_hist_5 = []
+
 for epoch in tqdm(range(epochs)):
     running_loss = 0.0
     local_loss = []
-    acc = []
+    
+    acc_1 = []
+    acc_2 = []
+    acc_3 = []
+    acc_4 = []
+    acc_5 = []
     print("EPOCH",epoch)
     # モデル保存
     torch.save(model.state_dict(), "models/models_state_dict_"+str(epoch)+"epochs.pth")
     print("success model saving")
-    for i,(inputs, labels) in enumerate(train_iter, 0):
-        optimizer.zero_grad()
-        inputs = inputs.to(device)
-        #print("inputs:",inputs.shape) #torch.Size([256, 4096, 10])
-        #torch.set_printoptions(threshold = 1000000)
-        #print("labels:",labels) #torch.Size([256, 4096])
-        #labels = labels.to(device,dtype=torch.long)
-        labels = labels.to(device)
-        loss, pred, _, iou = model(inputs, labels)
-        #print("loss : ",loss)
-        #print("IOU SCORE　: ",iou)
-        pred,_ = torch.max(pred,1)
-        acc.append(iou)
-
-        loss.backward()
-        optimizer.step()
-
-        # print statistics
-        running_loss += loss.item()
-        local_loss.append(loss.item())
-        if i % 100 == 99:
-            print('[{:d}, {:5d}] loss: {:.3f}'
-                        .format(epoch + 1, i + 1, running_loss / 100))
-            running_loss = 0.0
+    with tqdm(total=len(train_dataset),desc=f'Epoch{epoch+1}/{epochs}',unit='img')as pbar:
+        for i,(inputs, labels) in enumerate(train_iter, 0):
+            optimizer.zero_grad()
+            inputs = inputs.to(device)
+            #print("i:",i) #torch.Size([256, 4096, 10])
+            #torch.set_printoptions(threshold = 1000000)
+            #print("labels:",labels) #torch.Size([256, 4096])
+            #labels = labels.to(device,dtype=torch.long)
+            labels = labels.to(device)
+            loss, pred, _, iou, cnt = model(inputs, labels)
+            #iou = 各発火閾値ごとに連なり[??(i=1),??(i=2),,,,]
+            pred,_ = torch.max(pred,1)
+            #print('IoU : ',iou)      
+            acc_1.append(iou[0])
+            acc_2.append(iou[1])
+            acc_3.append(iou[2])
+            acc_4.append(iou[3])
+            acc_5.append(iou[4])
     
-    mean_acc = np.mean(acc)
-    print("mean iou ",mean_acc)
-    acc_hist.append(mean_acc)
+
+            loss.backward()
+            optimizer.step()
+
+            # print statistics
+            running_loss += loss.item()
+            local_loss.append(loss.item())
+            if i % 100 == 99:
+                print('[{:d}, {:5d}] loss: {:.3f}'
+                            .format(epoch + 1, i + 1, running_loss / 100))
+                running_loss = 0.0
+    
+    mean_acc_1 = np.mean(acc_1)
+    mean_acc_2 = np.mean(acc_2)
+    mean_acc_3 = np.mean(acc_3)
+    mean_acc_4 = np.mean(acc_4)
+    mean_acc_5 = np.mean(acc_5)
+
+    print("mean iou ",mean_acc_5)
+    acc_hist_1.append(mean_acc_1)
+    acc_hist_2.append(mean_acc_2)
+    acc_hist_3.append(mean_acc_3)
+    acc_hist_4.append(mean_acc_4)
+    acc_hist_5.append(mean_acc_5)
+
     mean_loss = np.mean(local_loss)
     print("mean loss",mean_loss)
     loss_hist.append(mean_loss)
 
-print("learn finish")   
-fig1 = plt.figure(figsize=(3.3,2),dpi=150)
-plt.plot(loss_hist)
-plt.xlabel("epoch")
-plt.ylabel("Loss")
+fig = plt.figure(facecolor='oldlace')
+ax1 = fig.add_subplot(1,2,1)
+ax2 = fig.add_subplot(1,2,2)
+ax1.set_title('loss')
+ax1.plot(loss_hist)
+ax1.set_xlabel('EPOCH')
+ax1.set_ylabel('LOSS')
+
+ax2.set_title('IOU')
+ax2.grid()
+ax2.plot(acc_hist_1,label='1')
+ax2.plot(acc_hist_2,label='2')
+ax2.plot(acc_hist_3,label='3')
+ax2.plot(acc_hist_4,label='4')
+ax2.plot(acc_hist_5,label='5')
+ax2.legend(loc=0)
+fig.tight_layout()
+
+fig.savefig('models/loss--IOU.jpg')
 plt.show()
-fig1.savefig('models/loss.jpg')
+
+"""
 fig2 = plt.figure(figsize=(3.3,2),dpi=150)
-plt.plot(acc_hist)
+plt.plot(acc_hist_1)
+plt.plot(acc_hist_2)
+plt.plot(acc_hist_3)
+plt.plot(acc_hist_4)
+plt.plot(acc_hist_5)
 plt.xlabel("epoch")
 plt.ylabel("IOU SCORE")
 plt.show()
 fig2.savefig('models/IOU.jpg')
-
+"""
 torch.save(model.state_dict(), "models/models_state_dict_end.pth")
  # モデル読み込み
 print("success model saving")
