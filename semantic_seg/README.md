@@ -1,6 +1,9 @@
 # dem_autoencoder_segmentation.py
 64pixの領域から長方形を塗りつぶすタスク
 
+Run, python train.py -b 128 -e 100 -t 20 -r True
+(batch, epoch, simulation time steps, recurrent conection)
+
 教師データ
 (C:\Users\aki\Documents\GitHub\deep\semantic_seg\semantic_data)
 
