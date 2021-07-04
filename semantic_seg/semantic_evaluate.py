@@ -17,6 +17,7 @@ from mp4_rec import mk_txt, record, rectangle_record, heatmap,label_save
 import pandas as pd
 import scipy.io
 from torchsummary import summary
+import argparse
 
 class LoadDataset(torch.utils.data.Dataset):
     def __init__(self, csv_file):
@@ -45,10 +46,21 @@ class LoadDataset(torch.utils.data.Dataset):
         label = label.astype(np.float32)
         return image, label
 
+parser = argparse.ArgumentParser()
+parser.add_argument('--batch', '-b', type=int, default=128)
+parser.add_argument('--epoch', '-e', type=int, default=50)
+parser.add_argument('--time', '-t', type=int, default=20,
+                        help='Total simulation time steps.')
+parser.add_argument('--rec', '-r', type=str, default=False)                      
+args = parser.parse_args()
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     
-model = network.SNU_Network(num_time=20,gpu=True)
+model = network.SNU_Network(num_time=args.time,l_tau=0.8,rec=args.rec, gpu=True,batch_size=args.batch)
 model = model.to(device)
-model_path = "models/tof_input_DEM(8deg)/models_state_dict_end.pth"
+model.eval()
+print(model.state_dict().keys())
+#model_path = "models/tof_input_DEM(16deg)/models_state_dict_end.pth"
+model_path = "models/recursive_tof_input(16deg)/models_state_dict_end.pth"
 model.load_state_dict(torch.load(model_path))
 print("load model")
 
@@ -78,7 +90,7 @@ label_ = label_.detach().clone().numpy()
 # MP4  レコード
 
 ####　必ず確認！
-data_id = 5
+data_id = 52
 num_time = 20
 
 
