@@ -12,23 +12,25 @@ import matplotlib.pyplot as plt
 # Network definition
 # 新実装(4/25~) dem_autoencoder_segmentation
 class SNU_Network(torch.nn.Module):
-    def __init__(self, num_time=10, l_tau=0.8, soft=False, gpu=False,
-                 test_mode=False):
+    def __init__(self, num_time=20, l_tau=0.8, soft=False, rec=False, gpu=False,
+                 test_mode=False, batch_size=32):
         super(SNU_Network, self).__init__()
 
         
         self.num_time = num_time
         #self.gamma = (1/(num_time*n_out))*1e-3
         self.test_mode = test_mode
+        self.batch_size = batch_size
+        self.rec = rec
         # Encoder layers
-        self.l1 = snu_layer.Conv_SNU(in_channels=1, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, gpu=gpu)
+        self.l1 = snu_layer.Conv_SNU(in_channels=1, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
         #self.bntt1 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
-        self.l2 = snu_layer.Conv_SNU(in_channels=16, out_channels=4, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, gpu=gpu)
+        self.l2 = snu_layer.Conv_SNU(in_channels=16, out_channels=4, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
         #self.bntt2 = nn.ModuleList([nn.BatchNorm2d(4, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
         # Decoder layers
-        self.l3 = snu_layer.tConv_SNU(in_channels=4, out_channels=16, kernel_size=2,stride=2, l_tau=l_tau, soft=soft, gpu=gpu)
+        self.l3 = snu_layer.tConv_SNU(in_channels=4, out_channels=16, kernel_size=2,stride=2, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
         #self.bntt3 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
-        self.l4 = snu_layer.tConv_SNU(in_channels=16, out_channels=1, kernel_size=2, stride=2, l_tau=l_tau, soft=soft, gpu=gpu)
+        self.l4 = snu_layer.tConv_SNU(in_channels=16, out_channels=1, kernel_size=2, stride=2, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
         #self.bntt4 = nn.ModuleList([nn.BatchNorm2d(1, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
 
 
@@ -65,11 +67,12 @@ class SNU_Network(torch.nn.Module):
         sum_out = None
         dtype = torch.float
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        out = torch.zeros((64, 1, 64, 64), device=device, dtype=dtype)
+        out = torch.zeros((self.batch_size, 1, 64, 64), device=device, dtype=dtype)
         out_rec = [out]
         log_softmax_fn = nn.LogSoftmax(dim=1)
         loss_fn = nn.NLLLoss()
         self._reset_state()
+        self.gamma = (1/(self.num_time*4096))*1e-2
         
         if self.test_mode == True:
             h1_list = []
@@ -129,12 +132,15 @@ class SNU_Network(torch.nn.Module):
         # 出力mと教師信号yの形式を統一する
         y = y.reshape(len(x_t), 1, 64, 64)
         #m = torch.where(m>0,1,0).to(torch.float32)
-        y = torch.where(y>0,20,0).to(torch.float32)
+        #y = torch.where((y>0)&(y<2),self.num_time//2,0).to(torch.float32)
+        y = torch.where(y>0,self.num_time,0).to(torch.float32)
         #criterion = nn.CrossEntropyLoss() #MNIST 
         criterion = nn.MSELoss() # semantic segmantation
         loss = criterion(m, y)
-        #print("loss",loss)
-        #loss += self.gamma*torch.sum(m**2)
+        
+        #metabolic_cost = self.gamma*torch.sum(m**3)
+        #print("MSE_loss : metabplic_cost = ",loss,metabolic_cost)
+        #loss += metabolic_cost
         iou,cnt= self.iou_score(m, y)
         
         if self.test_mode == True:
@@ -284,7 +290,7 @@ class Conv_SNU_Network_classification(torch.nn.Module):
         correct = 0
         dtype = torch.float
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        out = torch.zeros((128,self.n_out), device=device, dtype=dtype)
+        out = torch.zeros((32,self.n_out), device=device, dtype=dtype)
         out_rec = [out]
         log_softmax_fn = nn.LogSoftmax(dim=1)
         loss_fn = nn.NLLLoss()
@@ -295,24 +301,26 @@ class Conv_SNU_Network_classification(torch.nn.Module):
 
             x_t = x[:,:,t]  #torch.Size([256, 784])
             #print("x_t : ",x_t.shape)
-            x_t = x_t.reshape((len(x_t), 1, 64, 64))
+            x_t = x_t.reshape((len(x_t), 1, 32, 32))
             #####
-            fig = plt.figure(figsize=(12,8))
-            ax1 = fig.add_subplot(121)
+            #fig = plt.figure(figsize=(12,8))
+            #ax1 = fig.add_subplot(121)
             x_t_=x_t.to('cpu').detach().numpy().copy()
-            print("x_t_ shape",x_t_.shape)
-            ax1 = plt.imshow(x_t_[0,0,:,:])
+            #print("x_t_ shape",x_t_.shape)
+            ##ax1 = plt.imshow(x_t_[0,0,:,:])
             ax1 = plt.title("input:"+str(t)+"")
             
             # 第一層　畳み込み
             h1 = self.cn1(x_t) 
             #####
             h1_=h1.to('cpu').detach().numpy().copy()
+            """
             print("h1_ shape",h1_.shape)
             ax2 = fig.add_subplot(122)
             ax2 = plt.imshow(h1_[0,0,:,:])
             ax2 = plt.title("after conv")
             plt.show()
+            """
             # 第二層 最大プーリング
             h2 = F.max_pool2d(h1, 2)
             #print("h2 :",h2.shape)
@@ -320,6 +328,7 @@ class Conv_SNU_Network_classification(torch.nn.Module):
             #print("h2_ : ",h2.shape )
             # 第三層　出力
             out = self.l2(h2)
+            #print("out_",out.shape)
             
             out_rec.append(out)
     
@@ -327,7 +336,7 @@ class Conv_SNU_Network_classification(torch.nn.Module):
         #print("out_rec.shape",out_rec.shape) #out_rec.shape torch.Size([256, 11, 10]) ([バッチ,時間,分類])
         #m,_=torch.sum(out_rec,1)
         m =torch.sum(out_rec,1) #m.shape: torch.Size([256, 10])
-        m = m/20
+        m = m/self.num_time
         #print("type m:",m.type())
         #print("m",m)
         
@@ -337,7 +346,7 @@ class Conv_SNU_Network_classification(torch.nn.Module):
         #print("y",y)
 
 
-        print("///////////////////////")
+        #print("///////////////////////")
         criterion = nn.CrossEntropyLoss() #MNIST 
         #criterion = nn.MSELoss() # semantic segmantation
         _,m_col =  torch.max(m, 1)
@@ -346,14 +355,14 @@ class Conv_SNU_Network_classification(torch.nn.Module):
         #acc = acc.to('cpu').detach().numpy().copy()
         #print("correct : ",acc)
         loss = criterion(m, y)
-        print("end of BCE loss :", loss)
+        #print("end of BCE loss :", loss)
         #print("correct : ",acc)
         #acc = torch.sum(m == y) * 1.0 / len(y)
         y = F.one_hot(y,num_classes=2)
         _,y_col = torch.max(y,1)
         acc = torch.sum(m_col == y_col) * 1.0 / len(y)
         acc = acc.to('cpu').detach().numpy().copy()
-        print("correct : ",acc)
+        #print("correct : ",acc)
         #loss += self.gamma*torch.sum(m**2)
         #print("gamma loss",loss)
         return loss, m, out_rec,acc
