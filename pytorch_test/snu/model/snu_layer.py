@@ -275,7 +275,7 @@ class tConv_SNU(nn.Module):
             self.initialize_state(x.shape)
         #print(self.l_tau)
         #print("rec:",self.rec)
-        #print('self.Wy(self.y)',self.Wy(self.y).shape)
+        #"print('self.Wy(self.y)',self.Wy(self.y).shape)
         #print('self.Wx(x)',self.Wx(x).shape)
         if type(self.s) == numpy.ndarray:
             self.s = torch.from_numpy(self.s.astype(np.float32)).clone()
@@ -302,12 +302,7 @@ class tConv_SNU(nn.Module):
             #print("self.initial_bias.shape:",self.initial_bias.shape)
             #print("self.b.shape !!!!!!!!!!!!!!!! ", self.b[(...,) + (None,) * (s.ndim - self.b.ndim - axis)].shape)
             bias = s + self.b[(...,) + (None,) * (s.ndim - self.b.ndim - axis)] #error!! two types
-            #print("bias:",bias)
-            #print("s in snu:",s)
             bias = s + self.b
-            #bias = s + self.initial_bias
-            
-            #print("bias in snu:",bias)
             y = step_func.spike_fn(bias)
         
         self.s = s
