@@ -150,11 +150,18 @@ train_iter = DataLoader(train_dataset, batch_size=args.batch, shuffle=False)
 
 # ネットワーク設計
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-# オートエンコーダー　
-model = network.SNU_Network(num_time=args.time,l_tau=0.8,rec=args.rec, gpu=True,batch_size=args.batch)
+# 畳み込みオートエンコーダー　リカレントSNN　
+#model = network.SNU_Network(num_time=args.time,l_tau=0.8,rec=args.rec, gpu=True,batch_size=args.batch)
+
+# 全結合 リカレントSNN
+# model = network.Fully_Connected_Gated_SNU_Net(rec=args.rec)
+
+# 全結合　畳み込みリカレントSNN
+model = network.Gated_CSNU_Net()
+
 model = model.to(device)
 print("building model")
-#print(model.state_dict())
+print(model.state_dict().keys())
 optimizer = optim.Adam(model.parameters(), lr=1e-4)
 epochs = args.epoch
 
@@ -176,7 +183,8 @@ for epoch in tqdm(range(epochs)):
     acc_5 = []
     print("EPOCH",epoch)
     # モデル保存
-    torch.save(model.state_dict(), "models/models_state_dict_"+str(epoch)+"epochs.pth")
+    if epoch == 0 :
+        torch.save(model.state_dict(), "models/models_state_dict_"+str(epoch)+"epochs.pth")
     print("success model saving")
     with tqdm(total=len(train_dataset),desc=f'Epoch{epoch+1}/{epochs}',unit='img')as pbar:
         for i,(inputs, labels) in enumerate(train_iter, 0):
