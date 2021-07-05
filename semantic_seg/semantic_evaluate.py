@@ -55,12 +55,17 @@ parser.add_argument('--rec', '-r', type=str, default=False)
 args = parser.parse_args()
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     
-model = network.SNU_Network(num_time=args.time,l_tau=0.8,rec=args.rec, gpu=True,batch_size=args.batch)
+#model = network.Fully_Connected_Gated_SNU_Net(num_time=args.time,l_tau=0.8,rec=args.rec, gpu=True,batch_size=args.batch)
+
+# 全結合　畳み込みリカレントSNN
+model = network.Gated_CSNU_Net()
 model = model.to(device)
 model.eval()
 print(model.state_dict().keys())
 #model_path = "models/tof_input_DEM(16deg)/models_state_dict_end.pth"
-model_path = "models/recursive_tof_input(16deg)/models_state_dict_end.pth"
+#model_path = "models/recursive_tof_input(16deg)/models_state_dict_end.pth"
+model_path = "models/models_state_dict_0epochs.pth"
+#model_path = "models/models_state_dict_0epochs.pth"
 model.load_state_dict(torch.load(model_path))
 print("load model")
 

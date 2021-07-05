@@ -79,7 +79,9 @@ def record(x,num_time=20,data_id=2): # x : output
     #plt.show()
 
 def heatmap(x,num_time=20,data_id=2,label_img=None): # 画像を時間軸方向に積算してヒートマップに
+    print("x",x.shape)
     x = x[data_id].squeeze(1)
+    #x = x[data_id]
     print("x",x.shape) # x (11, 64, 64)
     sum_x = np.sum(x,axis=0)
     print("sum_x",sum_x.shape) # sum_x (64, 64)

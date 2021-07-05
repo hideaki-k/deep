@@ -6,11 +6,191 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
 from . import snu_layer
+from . import revised_snu_layer
 import numpy as np
 from torchsummary import summary
 import matplotlib.pyplot as plt
-# Network definition
-# 新実装(4/25~) dem_autoencoder_segmentation
+
+
+# Network definition]
+
+# 7/5~
+class Gated_CSNU_Net(torch.nn.Module):
+    def __init__(self, num_time=20, gpu=True, batch_size=128):
+        super(Gated_CSNU_Net, self).__init__()
+        
+        self.num_time = num_time
+        self.batch_size = batch_size
+ 
+        # Encoder layers
+        self.l1 = revised_snu_layer.Gated_Conv_SNU(channelIn=1, channelOut=1, kernel_size=5, padding=2, gpu=gpu)
+        #self.bntt1 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+        self.l2 = revised_snu_layer.Gated_Conv_SNU(channelIn=1, channelOut=1, kernel_size=5, padding=2, gpu=gpu)
+        #self.bntt2 = nn.ModuleList([nn.BatchNorm2d(4, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+        # Decoder layers
+        self.l3 = revised_snu_layer.Gated_Conv_SNU(channelIn=1, channelOut=1, kernel_size=5, padding=2, gpu=gpu)
+        #self.bntt3 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+        self.l4 = revised_snu_layer.Gated_Conv_SNU(channelIn=1, channelOut=1, kernel_size=5, padding=2, gpu=gpu)
+        #self.bntt4 = nn.ModuleList([nn.BatchNorm2d(1, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+
+
+    def _reset_state(self):
+        self.l1.reset_state()
+        self.l2.reset_state()
+        self.l3.reset_state()
+        self.l4.reset_state()
+
+    def iou_score(self, outputs, labels):
+        smooth = 1e-6
+        outputs = outputs.data.cpu().numpy() #outputs.shape: (128, 1, 64, 64)
+        labels = labels.data.cpu().numpy() #labels.shape: (128, 1, 64, 64)
+        np.set_printoptions(threshold=np.inf)
+        outputs = outputs.squeeze(1) # BATCH*1*H*W => BATCH*H*W __outputs.shape : (128, 64, 64)
+        labels = labels.squeeze(1) #__labels.shape : (128, 64, 64)
+        #print("outputs : ",outputs)
+        iou = []
+        cnt = []
+        for i in range(1,6):
+            output = np.where(outputs>i,1,0)
+            label = np.where(labels>0,1,0)
+            intersection = (np.uint64(output) & np.uint64(label)).sum((1,2)) # will be zero if Trueth=0 or Prediction=0
+            union = (np.uint64(output) | np.uint64(label)).sum((1,2)) # will be zero if both are 0
+        
+            iou.append((intersection + smooth) / (union + smooth))
+            cnt.append(i)
+        
+        return iou,cnt
+        
+    def forward(self, x, y):
+        loss = None
+        dtype = torch.float
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        out = torch.zeros((self.batch_size, 1, 64, 64), device=device, dtype=dtype)
+        out_rec = [out]
+        self._reset_state()
+        
+        
+        
+        for t in range(self.num_time):
+            x_t = x[:,:,t]  #torch.Size([256, 784])
+            x_t = x_t.reshape((len(x_t), 1, 64, 64))
+            #print("x_t : ",x_t.shape)
+            h1 = self.l1(x_t) # h1 :  torch.Size([256, 16, 64, 64])  
+            h2 = self.l2(h1) #h2 :  torch.Size([256, 4, 32, 32])
+            h3 = self.l3(h2)
+            out = self.l4(h3) #out.shape torch.Size([256, 10]) # [バッチサイズ,output.shape]
+            #print("out.shape",out.shape) #out[0].shape torch.Size([10])
+            #print("sum out[0]:",sum(out[0]))  #tensor([1., 0., 1., 0., 1., 0., 1., 1., 0., 1.], device='cuda:0',
+            #sum_out = out if sum_out is None else sum_out + out
+            out_rec.append(out)
+    
+        out_rec = torch.stack(out_rec,dim=1)
+        #print("out_rec.shape",out_rec.shape) #out_rec.shape torch.Size([128, 21, 1, 64, 64]) ([バッチ,時間,分類])
+        #m,_=torch.sum(out_rec,1)
+        m =torch.sum(out_rec,1) #m.shape: torch.Size([256, 10]) for classifiartion
+        # m : out_rec(21step)を時間軸で積算したもの
+        # 出力mと教師信号yの形式を統一する
+        y = y.reshape(len(x_t), 1, 64, 64)
+        y = torch.where(y>0,self.num_time,0).to(torch.float32)
+        #criterion = nn.CrossEntropyLoss() #MNIST 
+        criterion = nn.MSELoss() # semantic segmantation
+        loss = criterion(m, y)
+        
+        iou,cnt= self.iou_score(m, y)
+        
+        return loss, m, out_rec, iou, cnt
+
+# 7/5 ~
+class Fully_Connected_Gated_SNU_Net(torch.nn.Module):
+    def __init__(self, n_in=4096, n_mid=4096, n_out=4096,
+                 num_time=20, l_tau=0.8, rec=True, gpu=True,batch_size=128):
+        super(Fully_Connected_Gated_SNU_Net, self).__init__()
+
+        self.n_out = n_out
+        self.num_time = num_time
+        self.batch_size = batch_size
+        self.rec = rec
+        self.l_tau = l_tau
+        print("self.rec",self.rec)
+ 
+        self.l1 = revised_snu_layer.Gated_SNU(n_in,  rec=self.rec, l_tau=self.l_tau, gpu=gpu)
+        self.l2 = revised_snu_layer.Gated_SNU(n_mid, rec=self.rec, l_tau=self.l_tau, gpu=gpu)
+        self.l3 = revised_snu_layer.Gated_SNU(n_mid, rec=self.rec, l_tau=self.l_tau, gpu=gpu)
+        self.l4 = revised_snu_layer.Gated_SNU(n_out, rec=self.rec, l_tau=self.l_tau, gpu=gpu)
+        
+
+    def _reset_state(self):
+        self.l1.reset_state()
+        self.l2.reset_state()
+        self.l3.reset_state()
+        self.l4.reset_state()
+
+    def iou_score(self, outputs, labels):
+        smooth = 1e-6
+
+        outputs = outputs.data.cpu().numpy().reshape(self.batch_size,64,64)  
+        labels = labels.data.cpu().numpy().reshape(self.batch_size,64,64)   
+        np.set_printoptions(threshold=np.inf)
+        #outputs = outputs.squeeze(1) # BATCH*1*H*W => BATCH*H*W __outputs.shape : (128, 64, 64)
+        #labels = labels.squeeze(1) #__labels.shape : (128, 64, 64)
+        #print("outputs : ",outputs)
+        iou = []
+        cnt = []
+        for i in range(1,6):
+            output = np.where(outputs>i,1,0)
+            label = np.where(labels>0,1,0)
+           # print("output",output)
+            #print("label",label)
+            intersection = (np.uint64(output) & np.uint64(label)).sum((1,2))
+            #intersection = (np.uint64(output) & np.uint64(label).sum((0,1))) # will be zero if Trueth=0 or Prediction=0
+            #union = (np.uint64(output) | np.uint64(label)).sum((0,1)) # will be zero if both are 0
+            union = (np.uint64(output) | np.uint64(label)).sum((1,2))
+            #print("intersection,union",intersection ,union )
+            iou.append((intersection + smooth) / (union + smooth))
+            cnt.append(i)
+        
+        return iou,cnt        
+    def forward(self, x, y):
+        loss = None
+
+        dtype = torch.float
+        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        out = torch.zeros((self.batch_size ,self.n_out), device=device, dtype=dtype)
+        out_rec = [out]
+        self._reset_state()
+        
+        for t in range(self.num_time):
+            x_t = x[:,:,t]  #torch.Size([256, 784])
+            x_t = x_t.reshape((len(x_t),4096))
+            h1 = self.l1(x_t) # torch.Size([256, 256])
+            #print("sum h1[0]",sum(h1[0]))
+            h2 = self.l2(h1) #h2.shape: torch.Size([256, 256])
+            #print("sum h2[0]",sum(h2[0]))
+            h3 = self.l3(h2)
+            #print("sum h3[0]",sum(h3[0]))
+            out = self.l4(h3) #out.shape torch.Size([256, 10]) # [バッチサイズ,output.shape]
+            #print("out.shape",out.shape) #out[0].shape torch.Size([10])
+            #print("out[0]:",out[0])  #tensor([1., 0., 1., 0., 1., 0., 1., 1., 0., 1.], device='cuda:0',            
+            #sum_out = out if sum_out is None else sum_out + out
+            out_rec.append(out)
+    
+        out_rec = torch.stack(out_rec,dim=1)
+        #print("out_rec.shape",out_rec.shape) #out_rec.shape torch.Size([256, 11, 10]) ([バッチ,時間,分類])
+        #m,_=torch.sum(out_rec,1)
+        m =torch.sum(out_rec,1) #m.shape: torch.Size([256, 10])
+       
+        #print("m",m)
+        y = torch.tensor(y, dtype=torch.float)
+        y = torch.where(y>0,self.num_time,0).to(torch.float32)
+
+        #criterion = nn.CrossEntropyLoss() #MNIST 
+        criterion = nn.MSELoss() # semantic segmantation
+        loss = criterion(m, y)
+        iou,cnt= self.iou_score(m, y)
+        out_rec =out_rec.reshape(128,21,64,64)
+        return loss, m, out_rec, iou, cnt
+
+# 新実装(4/25~) 
 class SNU_Network(torch.nn.Module):
     def __init__(self, num_time=20, l_tau=0.8, soft=False, rec=False, gpu=False,
                  test_mode=False, batch_size=32):
@@ -18,8 +198,6 @@ class SNU_Network(torch.nn.Module):
 
         
         self.num_time = num_time
-        #self.gamma = (1/(num_time*n_out))*1e-3
-        self.test_mode = test_mode
         self.batch_size = batch_size
         self.rec = rec
         # Encoder layers
@@ -69,8 +247,6 @@ class SNU_Network(torch.nn.Module):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         out = torch.zeros((self.batch_size, 1, 64, 64), device=device, dtype=dtype)
         out_rec = [out]
-        log_softmax_fn = nn.LogSoftmax(dim=1)
-        loss_fn = nn.NLLLoss()
         self._reset_state()
         self.gamma = (1/(self.num_time*4096))*1e-2
         
@@ -148,9 +324,6 @@ class SNU_Network(torch.nn.Module):
         else:
             return loss, m, out_rec, iou, cnt
         
-
-
-
 class SNU_Network_classification(torch.nn.Module):
     def __init__(self, n_in=784, n_mid=256, n_out=10,
                  num_time=20, l_tau=0.8, soft=False, gpu=False,
