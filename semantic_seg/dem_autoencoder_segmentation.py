@@ -140,7 +140,7 @@ parser.add_argument('--batch', '-b', type=int, default=128)
 parser.add_argument('--epoch', '-e', type=int, default=50)
 parser.add_argument('--time', '-t', type=int, default=20,
                         help='Total simulation time steps.')
-parser.add_argument('--rec', '-r', type=str, default=False)                      
+parser.add_argument('--rec', '-r', action='store_true' ,default=False)  # -r付けるとTrue                  
 args = parser.parse_args()
 
 
@@ -151,13 +151,13 @@ train_iter = DataLoader(train_dataset, batch_size=args.batch, shuffle=False)
 # ネットワーク設計
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # 畳み込みオートエンコーダー　リカレントSNN　
-#model = network.SNU_Network(num_time=args.time,l_tau=0.8,rec=args.rec, gpu=True,batch_size=args.batch)
+model = network.SNU_Network(num_time=args.time,l_tau=0.8,rec=args.rec, gpu=True,batch_size=args.batch)
 
 # 全結合 リカレントSNN
 # model = network.Fully_Connected_Gated_SNU_Net(rec=args.rec)
 
 # 全結合　畳み込みリカレントSNN
-model = network.Gated_CSNU_Net()
+#model = network.Gated_CSNU_Net()
 
 model = model.to(device)
 print("building model")
@@ -185,7 +185,7 @@ for epoch in tqdm(range(epochs)):
     # モデル保存
     if epoch == 0 :
         torch.save(model.state_dict(), "models/models_state_dict_"+str(epoch)+"epochs.pth")
-    print("success model saving")
+        print("success model saving")
     with tqdm(total=len(train_dataset),desc=f'Epoch{epoch+1}/{epochs}',unit='img')as pbar:
         for i,(inputs, labels) in enumerate(train_iter, 0):
             optimizer.zero_grad()
