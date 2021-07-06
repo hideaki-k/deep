@@ -131,9 +131,10 @@ class Conv_SNU(nn.Module):
         self.s = None
         self.y = None
         self.initial_bias = initial_bias
-
+        print("==== self.rec ====",rec)
+        print("=== GPU ===",self.gpu)
         if self.gpu:
-            #xp = cuda.cupy
+            
             dtype = torch.float
             device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         else:
@@ -142,10 +143,24 @@ class Conv_SNU(nn.Module):
 
         self.Wx = nn.Conv2d(self.in_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
         torch.nn.init.xavier_uniform_(self.Wx.weight)
-
-        if self.rec:
+        #print("self.rec in Conv_SNU",self.rec)
+        if rec:
+            print("recだよー")
             self.Wy = nn.Conv2d(self.out_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
             torch.nn.init.xavier_uniform_(self.Wy.weight)
+            self.Wi = nn.Conv2d(self.in_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+            torch.nn.init.xavier_uniform_(self.Wi.weight)
+            self.Ri = nn.Conv2d(self.out_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+            torch.nn.init.xavier_uniform_(self.Ri.weight)
+            
+            
+            """"
+            # 膜電位忘却ゲート
+            self.Wf = nn.Conv2d(self.in_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+            torch.nn.init.xavier_uniform_(self.Wf.weight)
+            self.Rf = nn.Conv2d(self.out_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+            torch.nn.init.xavier_uniform_(self.Rf.weight)
+            """
 
         if nobias:
             self.b = None
@@ -181,12 +196,17 @@ class Conv_SNU(nn.Module):
 
         if type(self.s) == numpy.ndarray:
             self.s = torch.from_numpy(self.s.astype(np.float32)).clone()
-       # print("=rec:",self.rec)
+    
         #print('=self.Wy(self.y)',self.Wy(self.y).shape)
         #print('=self.Wx(x)',self.Wx(x).shape)
         if self.rec:
-            s = F.elu(abs(self.Wx(x)) + self.Wy(self.y) + self.l_tau * self.s * (1-self.y))
+            print("rec yessss")
+            #f = torch.sigmoid(self.Wf(x) + self.Rf(self.y))
+            # spike 再入力ゲート
+            i = torch.sigmoid(self.Wi(x) + self.Ri(self.y))
+            s = F.elu(abs(self.Wx(x)) + i*self.Wy(self.y) + self.l_tau * self.s * (1-self.y))
         else:
+            #print("rec Noooooo")
             s = F.elu(abs(self.Wx(x)) + self.l_tau * self.s * (1-self.y))
         #s = F.elu(abs(self.Wx(x)) + r * self.s * (1-self.y))
 
@@ -236,12 +256,17 @@ class tConv_SNU(nn.Module):
 
         self.Wx = nn.ConvTranspose2d(self.in_channels, self.out_channels, self.kernel_size, self.stride, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
         torch.nn.init.xavier_uniform_(self.Wx.weight)
-        if self.rec:
+        if self.rec==True:
 
             self.Wy = nn.Conv2d(self.out_channels, self.out_channels, kernel_size=3, padding=1, stride=1, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
-            #self.Wy = nn.Linear(self.out_channels, self.out_channels)
             torch.nn.init.xavier_uniform_(self.Wy.weight)
-
+            """
+            # 膜電位忘却ゲート
+            self.Wf = nn.Conv2d(self.in_channels, self.out_channels, kernel_size=3, stride=1, padding=1, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+            torch.nn.init.xavier_uniform_(self.Wf.weight)
+            self.Rf = nn.Conv2d(self.out_channels, self.out_channels, kernel_size=3, stride=1, padding=1, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+            torch.nn.init.xavier_uniform_(self.Rf.weight)
+            """
         if nobias:
             self.b = None
         else:
@@ -280,8 +305,11 @@ class tConv_SNU(nn.Module):
         if type(self.s) == numpy.ndarray:
             self.s = torch.from_numpy(self.s.astype(np.float32)).clone()
     
-        if self.rec:
-            s = F.elu(abs(self.Wx(x)) + self.Wy(self.y) + self.l_tau * self.s * (1-self.y))
+        if self.rec==True:
+           # f = torch.sigmoid(self.Wf(x) + self.Rf(self.y))
+           # spike 再入力ゲート
+            i = torch.sigmoid(self.Wx(x) + self.Wy(self.y))
+            s = F.elu(abs(self.Wx(x)) + i*self.Wy(self.y) + self.l_tau* self.s * (1-self.y))
         else:
             s = F.elu(abs(self.Wx(x)) + self.l_tau * self.s * (1-self.y))
         #s = F.elu(abs(self.Wx(x)) + r * self.s * (1-self.y))
