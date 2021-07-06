@@ -21,18 +21,19 @@ class Gated_CSNU_Net(torch.nn.Module):
         
         self.num_time = num_time
         self.batch_size = batch_size
+        self.kernel_size = 3
+
  
         # Encoder layers
-        self.l1 = revised_snu_layer.Gated_Conv_SNU(channelIn=1, channelOut=1, kernel_size=5, padding=2, gpu=gpu)
-        #self.bntt1 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
-        self.l2 = revised_snu_layer.Gated_Conv_SNU(channelIn=1, channelOut=1, kernel_size=5, padding=2, gpu=gpu)
-        #self.bntt2 = nn.ModuleList([nn.BatchNorm2d(4, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
-        # Decoder layers
-        self.l3 = revised_snu_layer.Gated_Conv_SNU(channelIn=1, channelOut=1, kernel_size=5, padding=2, gpu=gpu)
-        #self.bntt3 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
-        self.l4 = revised_snu_layer.Gated_Conv_SNU(channelIn=1, channelOut=1, kernel_size=5, padding=2, gpu=gpu)
-        #self.bntt4 = nn.ModuleList([nn.BatchNorm2d(1, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+        self.l1 = revised_snu_layer.Gated_Conv_SNU(channelIn=1, channelOut=4, kernel_size=self.kernel_size, padding=2, gpu=gpu)
 
+        self.l2 = revised_snu_layer.Gated_Conv_SNU(channelIn=4, channelOut=4, kernel_size=self.kernel_size, padding=2, gpu=gpu)
+        
+        # Decoder layers
+        self.l3 = revised_snu_layer.Gated_Conv_SNU(channelIn=4, channelOut=4, kernel_size=self.kernel_size, padding=2, gpu=gpu)
+        
+        self.l4 = revised_snu_layer.Gated_Conv_SNU(channelIn=4, channelOut=1, kernel_size=self.kernel_size, padding=2, gpu=gpu)
+       
 
     def _reset_state(self):
         self.l1.reset_state()
@@ -190,9 +191,9 @@ class Fully_Connected_Gated_SNU_Net(torch.nn.Module):
         out_rec =out_rec.reshape(128,21,64,64)
         return loss, m, out_rec, iou, cnt
 
-# 新実装(4/25~) 
+# 改(7/6~) 
 class SNU_Network(torch.nn.Module):
-    def __init__(self, num_time=20, l_tau=0.8, soft=False, rec=False, gpu=False,
+    def __init__(self, num_time=20, l_tau=0.8, soft=False, rec=False, gpu=True,
                  test_mode=False, batch_size=32):
         super(SNU_Network, self).__init__()
 
@@ -202,15 +203,13 @@ class SNU_Network(torch.nn.Module):
         self.rec = rec
         # Encoder layers
         self.l1 = snu_layer.Conv_SNU(in_channels=1, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
-        #self.bntt1 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
         self.l2 = snu_layer.Conv_SNU(in_channels=16, out_channels=4, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
-        #self.bntt2 = nn.ModuleList([nn.BatchNorm2d(4, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
+        
         # Decoder layers
-        self.l3 = snu_layer.tConv_SNU(in_channels=4, out_channels=16, kernel_size=2,stride=2, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
-        #self.bntt3 = nn.ModuleList([nn.BatchNorm2d(16, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
-        self.l4 = snu_layer.tConv_SNU(in_channels=16, out_channels=1, kernel_size=2, stride=2, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
-        #self.bntt4 = nn.ModuleList([nn.BatchNorm2d(1, eps=1e-4, momentum=0.1, affine=True)for i in range(self.num_time)])
-
+        self.l3 = snu_layer.Conv_SNU(in_channels=4, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
+        self.l4 = snu_layer.Conv_SNU(in_channels=16, out_channels=1, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
+        
+        self.up_samp = nn.Upsample(scale_factor=2, mode='nearest')
 
     def _reset_state(self):
         self.l1.reset_state()
@@ -248,54 +247,21 @@ class SNU_Network(torch.nn.Module):
         out = torch.zeros((self.batch_size, 1, 64, 64), device=device, dtype=dtype)
         out_rec = [out]
         self._reset_state()
-        self.gamma = (1/(self.num_time*4096))*1e-2
-        
-        if self.test_mode == True:
-            h1_list = []
-            h2_list = []
-            h3_list = []
-            out_list = []
-        
+
         for t in range(self.num_time):
             x_t = x[:,:,t]  #torch.Size([256, 784])
             x_t = x_t.reshape((len(x_t), 1, 64, 64))
             #print("x_t : ",x_t.shape)
             h1 = self.l1(x_t) # h1 :  torch.Size([256, 16, 64, 64])  
-            """
-            fig = plt.figure(figsize=(12,8))
-            ax1 = fig.add_subplot(121)
-            x_t_=x_t.to('cpu').detach().numpy().copy()
-            
-            ax1 = plt.imshow(x_t_[0,0,:,:])
-            ax1 = plt.title("input :"+str(t)+"")
-            
-            h1_=h1.to('cpu').detach().numpy().copy()
-            ax2 = fig.add_subplot(122)
-            ax2 = plt.imshow(h1_[0,0,:,:])
-            ax2 = plt.title("after conv")
-            plt.show()
-            """
-            #h1 = self.bntt1[t](h1)
             h1 = F.max_pool2d(h1, 2) #h1_ :  torch.Size([256, 16, 32, 32])
-
             h2 = self.l2(h1) #h2 :  torch.Size([256, 4, 32, 32])
-           # h2 = self.bntt2[t](h2)
             h2 = F.max_pool2d(h2, 2)#h2 :  torch.Size([256, 16, 16, 16])
-
             h3 = self.l3(h2)
-            #h3 = self.bntt3[t](h3)
+            h3 = self.up_samp(h3)
             out = self.l4(h3) #out.shape torch.Size([256, 10]) # [バッチサイズ,output.shape]
-           # out = self.bntt4[t](out)
+            out = self.up_samp(out)
             #print("out.shape",out.shape) #out[0].shape torch.Size([10])
             #print("sum out[0]:",sum(out[0]))  #tensor([1., 0., 1., 0., 1., 0., 1., 1., 0., 1.], device='cuda:0',
-
-            
-            if self.test_mode == True:
-                h1_list.append(h1)
-                h2_list.append(h2)
-                h3_list.append(h3)
-                out_list.append(out)
-            
             #sum_out = out if sum_out is None else sum_out + out
             out_rec.append(out)
     
@@ -319,10 +285,8 @@ class SNU_Network(torch.nn.Module):
         #loss += metabolic_cost
         iou,cnt= self.iou_score(m, y)
         
-        if self.test_mode == True:
-            return loss, accuracy, h1_list, h2_list, h3_list, out_list
-        else:
-            return loss, m, out_rec, iou, cnt
+
+        return loss, m, out_rec, iou, cnt
         
 class SNU_Network_classification(torch.nn.Module):
     def __init__(self, n_in=784, n_mid=256, n_out=10,
