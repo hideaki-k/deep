@@ -51,28 +51,32 @@ parser.add_argument('--batch', '-b', type=int, default=128)
 parser.add_argument('--epoch', '-e', type=int, default=50)
 parser.add_argument('--time', '-t', type=int, default=20,
                         help='Total simulation time steps.')
-parser.add_argument('--rec', '-r', type=str, default=False)                      
+parser.add_argument('--rec', '-r', type=str, default=False)     
+parser.add_argument('--forget', '-f', action='store_true' ,default=False)   
+parser.add_argument('--dual', '-d', action='store_true' ,default=False)               
 args = parser.parse_args()
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")     
 #model = network.Fully_Connected_Gated_SNU_Net(num_time=args.time,l_tau=0.8,rec=args.rec, gpu=True,batch_size=args.batch)
 
 # 全結合　畳み込みリカレントSNN
-model = network.Gated_CSNU_Net()
+#model = network.Gated_CSNU_Net()
+model = network.SNU_Network(rec=args.rec, forget=args.forget, dual=args.dual)
 model = model.to(device)
 model.eval()
 print(model.state_dict().keys())
 #model_path = "models/tof_input_DEM(16deg)/models_state_dict_end.pth"
 #model_path = "models/recursive_tof_input(16deg)/models_state_dict_end.pth"
-model_path = "models/models_state_dict_0epochs.pth"
-#model_path = "models/models_state_dict_0epochs.pth"
+#model_path = "models/InputGated_recursive_tof(16deg)/models_state_dict_end.pth" 
+#model_path = "models/dualGated_recurrent_tof(16deg)/models_state_dict_end.pth" # -d
+model_path = "models/without_InputGated_recursive_tof(16deg)/models_state_dict_end.pth"
 model.load_state_dict(torch.load(model_path))
 print("load model")
 
 # test_img : 評価用画像生成
 # inputs_, label_ = test_img() 
 valid_dataset = LoadDataset("semantic_img_loc.csv")
-valid_iter = DataLoader(valid_dataset, batch_size=128, shuffle=False)
+valid_iter = DataLoader(valid_dataset, batch_size=32, shuffle=False)
 for i,(inputs, labels) in enumerate(valid_iter, 0):
     inputs_ = inputs
     label_ = labels
@@ -95,7 +99,7 @@ label_ = label_.detach().clone().numpy()
 # MP4  レコード
 
 ####　必ず確認！
-data_id = 52
+data_id = 9
 num_time = 20
 
 
