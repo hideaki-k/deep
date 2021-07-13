@@ -110,3 +110,4 @@ noise = wgn(1,1,-3);
 z =  zc + zr*sqrt(1-((x-xc)^2/xr^2)-((y-yc)^2/yr^2));
 
 end
+%%
