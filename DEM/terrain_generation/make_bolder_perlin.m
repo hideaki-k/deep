@@ -70,7 +70,7 @@ function f = make_bolder_perlin(k,mode)
     end
     %% モード1:openV
     if mode==1
-        v = VideoWriter('4_22_20step.avi');
+        v = VideoWriter('perlin_bolder.avi');
         open(v);
     end
     %% データに保存
