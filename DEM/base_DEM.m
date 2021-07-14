@@ -1,10 +1,10 @@
 function f=base_DEM(k,mode)
     f = mode;
     %% init parameter
-    size_factor = 64;
+    size_factor = 128;
     time_scale = 20;
     %angle = rand(1)*10;
-    angle = 16;
+    angle = 0;
     model = zeros(size_factor,size_factor);
     label_data = zeros(size_factor,size_factor);
     direct = round(rand(1),0);
@@ -30,7 +30,7 @@ function f=base_DEM(k,mode)
     end
 
     %% set parameter
-    R = 10 + abs(randn(1)); %クレータ半径
+    R = 15 + 5*abs(randn(1)); %クレータ半径
     % H_r = 150 + abs(5*randn())
     H_ro = 0.036*(2*R)^1.014;
     H_r = H_ro;
@@ -42,15 +42,16 @@ function f=base_DEM(k,mode)
     dist_to_zero =20; %標高ゼロまでの距離
     A = -3*R^3 + 2*R^2*beta + 2*R*beta^2 + 2*beta^3;
     % クレータ１の中心座標
-    x_center = size_factor/2+20*(-1 + (1+1)*rand(1));
-    y_center = size_factor/2+20*(-1 + (1+1)*rand(1));
+    x_center = size_factor/2 + 30*(-1 + (1+1)*rand(1));
+    y_center = size_factor/2 + 30*(-1 + (1+1)*rand(1));
 
     %% 生成したクレータ2が近接した場合に削除する処理
     cnt = 0;
     while 1
-        x_center_2 = size_factor/2-20*(-1 + (1+1)*rand(1));
-        y_center_2 = size_factor/2-20*(-1 + (1+1)*rand(1));
-        if sqrt(abs(x_center-x_center_2)^2) + sqrt(abs(y_center-y_center_2)^2) > 3.5*R
+        % クレータ2の中心座標
+        x_center_2 = size_factor/2 - 30*(-1 + (1+1)*rand(1));
+        y_center_2 = size_factor/2 - 30*(-1 + (1+1)*rand(1));
+        if sqrt(abs(x_center-x_center_2)^2) + sqrt(abs(y_center-y_center_2)^2) > 2.5*R
             break
         elseif cnt >=100
             break
@@ -67,12 +68,13 @@ function f=base_DEM(k,mode)
 
 
              if r <= alpha || r_ <= alpha
-                 label_data(i,j) = 1;
+                 %label_data(i,j) = 1;
                  if r <= alpha
+                    label_data(i,j) = 1;
                     h = (H_c+H_ro)*(r^2/R^2)-H_c;
 
                  elseif r_ <= alpha
-                    h = (H_c+H_ro)*(r_^2/R^2)-H_c;
+                    h = (0.3*H_c+H_ro)*(r_^2/R^2)-0.3*H_c;
                  end
 
     %              elseif r <= R || r_ <= R
@@ -162,7 +164,7 @@ function f=base_DEM(k,mode)
 
     %% 教師データとして保存
     if mode == 0
-        folder_name = string(size_factor)+"pix_("+string(angle)+"deg)_craters";
+        folder_name = string(size_factor)+"pix_("+string(angle)+"deg)_hetero_craters";
         mkdir(folder_name);
         mkdir(folder_name,'image');
         mkdir(folder_name,'label');
