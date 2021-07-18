@@ -1,11 +1,11 @@
-function f=base_DEM(k,mode)
+function f=base_DEM(k,mode,pix,angle,folder_name)
     f = mode;
 
     %% init parameter
-    size_factor = 128;
+    size_factor = pix;
     time_scale = 20;
     %angle = rand(1)*10;
-    angle = 0;
+
 
     model = zeros(size_factor,size_factor);
     label_data = zeros(size_factor,size_factor);
@@ -58,7 +58,7 @@ function f=base_DEM(k,mode)
         elseif cnt >=100
             break
         end
-        cnt=cnt+1
+        cnt=cnt+1;
     end
     %% クレータ付与
     for i =  1:1:size_factor
@@ -74,17 +74,10 @@ function f=base_DEM(k,mode)
                  if r <= alpha
                     label_data(i,j) = 1;
                     h = (H_c+H_ro)*(r^2/R^2)-H_c;
-                    %% 2段階ラベリング
-                    if r <= 0.5*alpha
-                        label_data(i,j) = 2;
-                    end
 
                  elseif r_ <= alpha
-
                     h = (0.3*H_c+H_ro)*(r_^2/R^2)-0.3*H_c;
-
                  end
-              
 
     %              elseif r <= R || r_ <= R
     %                  disp("R")
@@ -119,7 +112,7 @@ function f=base_DEM(k,mode)
     end
     model;
     model = round(model,0);
-    model;
+
     
     %% 三次元プロット
     if mode==2
@@ -174,12 +167,12 @@ function f=base_DEM(k,mode)
     %% 教師データとして保存
     if mode == 0
 
-        folder_name = string(size_factor)+"pix_("+string(angle)+"deg)_craters_twothreshold_labeling";
 
-        mkdir(folder_name);
-        mkdir(folder_name,'image');
-        mkdir(folder_name,'label');
         filenum = string(k);
+        
+        filename = folder_name+"/model/model_"+filenum;
+        save(filename,'model');
+        
         filename = folder_name+"/label/label_"+filenum;
         save(filename,'label_data');
      
