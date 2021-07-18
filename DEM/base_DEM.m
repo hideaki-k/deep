@@ -1,10 +1,11 @@
 function f=base_DEM(k,mode)
     f = mode;
-    %% init parameter
+    %% init parameter(必ず確認！）
     size_factor = 64;
     time_scale = 20;
     %angle = rand(1)*10;
-    angle = 16;
+    angle = 0;
+    
     model = zeros(size_factor,size_factor);
     label_data = zeros(size_factor,size_factor);
     direct = round(rand(1),0);
@@ -70,10 +71,20 @@ function f=base_DEM(k,mode)
                  label_data(i,j) = 1;
                  if r <= alpha
                     h = (H_c+H_ro)*(r^2/R^2)-H_c;
+                    %% 2段階ラベリング
+                    if r <= 0.5*alpha
+                        label_data(i,j) = 2;
+                    end
 
                  elseif r_ <= alpha
                     h = (H_c+H_ro)*(r_^2/R^2)-H_c;
+                     %% 2段階ラベリング
+                    if r_ <= 0.5*alpha
+                        label_data(i,j) = 2;
+                    end
+                    
                  end
+              
 
     %              elseif r <= R || r_ <= R
     %                  disp("R")
@@ -162,7 +173,7 @@ function f=base_DEM(k,mode)
 
     %% 教師データとして保存
     if mode == 0
-        folder_name = string(size_factor)+"pix_("+string(angle)+"deg)_craters";
+        folder_name = string(size_factor)+"pix_("+string(angle)+"deg)_craters_twothreshold_labeling";
         mkdir(folder_name);
         mkdir(folder_name,'image');
         mkdir(folder_name,'label');
