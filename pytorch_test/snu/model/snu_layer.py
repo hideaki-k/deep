@@ -116,7 +116,7 @@ class SNU(nn.Module):
         return y
 
 class Conv_SNU(nn.Module):
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, l_tau=0.8, soft=False, rec=False, nobias=False, initial_bias=-0.5, gpu=True):
+    def __init__(self, in_channels, out_channels, kernel_size, stride=1, padding=0, l_tau=0.8, soft=False, rec=False, forget=False, dual=False,nobias=False, initial_bias=-0.5, gpu=True):
         super(Conv_SNU,self).__init__()
 
         self.in_channels = in_channels
@@ -126,6 +126,8 @@ class Conv_SNU(nn.Module):
         self.padding = padding
         self.l_tau = l_tau
         self.rec = rec
+        self.forget = forget
+        self.dual = dual
         self.soft = soft
         self.gpu = gpu
         self.s = None
@@ -133,6 +135,8 @@ class Conv_SNU(nn.Module):
         self.initial_bias = initial_bias
         print("==== self.rec ====",rec)
         print("=== GPU ===",self.gpu)
+        print("==== self.forget ====",self.forget)
+        print(" ==== dual Gate ====",self.dual)
         if self.gpu:
             
             dtype = torch.float
@@ -152,15 +156,25 @@ class Conv_SNU(nn.Module):
             torch.nn.init.xavier_uniform_(self.Wi.weight)
             self.Ri = nn.Conv2d(self.out_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
             torch.nn.init.xavier_uniform_(self.Ri.weight)
-            
-            
-            """"
+        if forget:
             # 膜電位忘却ゲート
+            #print("forgetだよー")
             self.Wf = nn.Conv2d(self.in_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
-            torch.nn.init.xavier_uniform_(self.Wf.weight)
+            torch.nn.init.xavier_uniform_(self.Wf.weight,0.1)
             self.Rf = nn.Conv2d(self.out_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
-            torch.nn.init.xavier_uniform_(self.Rf.weight)
-            """
+            torch.nn.init.xavier_uniform_(self.Rf.weight,0.1)
+        if dual:
+            # スパイク再突入　＋　膜電位忘却ゲート
+            self.Wy = nn.Conv2d(self.out_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+            torch.nn.init.xavier_uniform_(self.Wy.weight)
+            self.Wi = nn.Conv2d(self.in_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+            torch.nn.init.xavier_uniform_(self.Wi.weight)
+            self.Ri = nn.Conv2d(self.out_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+            torch.nn.init.xavier_uniform_(self.Ri.weight)
+            self.Wf = nn.Conv2d(self.in_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+            torch.nn.init.xavier_uniform_(self.Wf.weight,0.1)
+            self.Rf = nn.Conv2d(self.out_channels, self.out_channels, kernel_size=self.kernel_size, stride=self.stride, padding=self.padding, bias=False).to(device) #入力チャネル数, 出力チャネル数, フィルタサイズ
+            torch.nn.init.xavier_uniform_(self.Rf.weight,0.1)
 
         if nobias:
             self.b = None
@@ -205,6 +219,16 @@ class Conv_SNU(nn.Module):
             # spike 再入力ゲート
             i = torch.sigmoid(self.Wi(x) + self.Ri(self.y))
             s = F.elu(abs(self.Wx(x)) + i*self.Wy(self.y) + self.l_tau * self.s * (1-self.y))
+        if self.forget:
+            #print("forget yesssss")
+            # 膜電位忘却ゲート
+            f = torch.sigmoid(self.Wf(x) + self.Rf(self.y))
+            s = F.elu(abs(self.Wx(x)) + (self.l_tau-f) * self.s * (1-self.y))
+        if self.dual:
+            #print("dual Gate yesssss")
+            i = torch.sigmoid(self.Wi(x) + self.Ri(self.y))
+            f = torch.sigmoid(self.Wf(x) + self.Rf(self.y))
+            s = F.elu(abs(self.Wx(x)) + i*self.Wy(self.y) + (self.l_tau-f) * self.s * (1-self.y))
         else:
             #print("rec Noooooo")
             s = F.elu(abs(self.Wx(x)) + self.l_tau * self.s * (1-self.y))
