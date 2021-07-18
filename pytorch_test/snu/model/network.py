@@ -193,21 +193,23 @@ class Fully_Connected_Gated_SNU_Net(torch.nn.Module):
 
 # 改(7/6~) 
 class SNU_Network(torch.nn.Module):
-    def __init__(self, num_time=20, l_tau=0.8, soft=False, rec=False, gpu=True,
-                 test_mode=False, batch_size=32):
+    def __init__(self, num_time=20, l_tau=0.8, soft=False, rec=False, forget=False, dual=False, gpu=True,
+                 batch_size=32):
         super(SNU_Network, self).__init__()
 
         
         self.num_time = num_time
         self.batch_size = batch_size
         self.rec = rec
+        self.forget = forget
+        self.dual = dual
         # Encoder layers
-        self.l1 = snu_layer.Conv_SNU(in_channels=1, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
-        self.l2 = snu_layer.Conv_SNU(in_channels=16, out_channels=4, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
+        self.l1 = snu_layer.Conv_SNU(in_channels=1, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, forget=self.forget, dual=self.dual, gpu=gpu)
+        self.l2 = snu_layer.Conv_SNU(in_channels=16, out_channels=4, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, forget=self.forget, dual=self.dual, gpu=gpu)
         
         # Decoder layers
-        self.l3 = snu_layer.Conv_SNU(in_channels=4, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
-        self.l4 = snu_layer.Conv_SNU(in_channels=16, out_channels=1, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, gpu=gpu)
+        self.l3 = snu_layer.Conv_SNU(in_channels=4, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, forget=self.forget, dual=self.dual, gpu=gpu)
+        self.l4 = snu_layer.Conv_SNU(in_channels=16, out_channels=1, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, forget=self.forget, dual=self.dual, gpu=gpu)
         
         self.up_samp = nn.Upsample(scale_factor=2, mode='nearest')
 
