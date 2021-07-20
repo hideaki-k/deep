@@ -1,6 +1,15 @@
 function f=base_DEM(k,mode,pix,angle,folder_name)
     f = mode;
-
+    %% generate background fractal terrain
+    x = [0:0.1:12.8];
+    y = [0:0.1:12.8];
+    %% Generate the random terrain with Perlin noise
+    % Initial calculation
+    [X, Y] = meshgrid(x,y);
+    f = @(t) myinterpolation(t);
+    H = perlin_2d(f, 5, X, Y);
+    size(H) % 301   301
+    
     %% init parameter
     size_factor = pix;
     time_scale = 20;
@@ -30,7 +39,7 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
             end
         end
     end
-
+    
     %% set parameter
     R = 15 + 5*abs(randn(1)); %クレータ半径
     % H_r = 150 + abs(5*randn())
@@ -41,8 +50,20 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
     % RANGE
     alpha = (H_c+H_r)*R/(H_c+H_ro); %クレータ内縁
     beta = R+(1-(H_c+H_r)/(H_c+H_ro))*W_r ;%クレータ外縁
-    dist_to_zero =20; %標高ゼロまでの距離
+    dist_to_zero = 20; %標高ゼロまでの距離
     A = -3*R^3 + 2*R^2*beta + 2*R*beta^2 + 2*beta^3;
+   %%  
+    %ボルダー1　の中心座標
+    xr = 10+abs(5*randn());
+    yr = 10+abs(5*randn());
+    zr = 4+abs(5*randn());
+    
+    a = 0;
+    b = 128;
+    xc = (b-a).*rand(1) + a
+    yc = (b-a).*rand(1) + a
+    zc = 0;
+    
     % クレータ１の中心座標
     x_center = size_factor/2 + 30*(-1 + (1+1)*rand(1));
     y_center = size_factor/2 + 30*(-1 + (1+1)*rand(1));
@@ -63,7 +84,20 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
     %% クレータ付与
     for i =  1:1:size_factor
         for j = 1:1:size_factor
-
+            
+            % ボルダー
+            if j > yc
+                if j < yc + yr*sqrt(1-(i-xc)^2/xr^2)
+                    z = generate_ellipsoid(i,j,xc, yc, zc, xr, yr, zr);
+                    model(i,j) = z + H(i,j);
+                end
+            else
+                if j > yc - yr*sqrt(1-(i-xc)^2/xr^2)
+                    z = generate_ellipsoid(i,j,xc, yc, zc, xr, yr, zr);
+                    model(i,j) = z+H(i,j) ;
+                end
+            end
+                
             % y = wgn(1,1,-3);
              r = sqrt(abs(i-x_center)^2 + abs(j-y_center)^2);
              r_ = sqrt(abs(i-x_center_2)^2 + abs(j-y_center_2)^2);
@@ -107,9 +141,12 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
                 h = -1;
              end
 
-             model(i,j) = model(i,j)+h;
+             model(i,j) = model(i,j) + h  ;
         end
     end
+    %% ボルダー付与
+    
+    
     model;
     model = round(model,0);
 
@@ -121,7 +158,7 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
         s.EdgeColor = 'none';
         xlabel('X');
         ylabel('Y');
-        zlim([-10 24])
+        zlim([-50 50])
         colorbar
         view(3)
         savefig('model')
@@ -179,4 +216,12 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
         filename = folder_name+"/image/image_"+filenum
         save(filename,'time_data');
     end
+end
+%% 楕円の方程式
+function z =generate_ellipsoid(x ,y, xc, yc, zc, xr, yr, zr)
+%x,y
+noise = wgn(1,1,-3);
+%y = y+noise
+z =  zc + zr*sqrt(1-((x-xc)^2/xr^2)-((y-yc)^2/yr^2));
+
 end
