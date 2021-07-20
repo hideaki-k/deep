@@ -161,7 +161,7 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
         zlim([-50 50])
         colorbar
         view(3)
-        savefig('model')
+        savefig('model.png')
         figure(2)
         s = surface(label_data);
         s.EdgeColor = 'none';
@@ -170,7 +170,7 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
         zlim([-10 24])
         colorbar
         view(3)
-        savefig('label')
+        savefig('label.png')
     end
     %% 動画 v open
 
@@ -220,7 +220,7 @@ end
 %% 楕円の方程式
 function z =generate_ellipsoid(x ,y, xc, yc, zc, xr, yr, zr)
 %x,y
-noise = wgn(1,1,-3);
+%noise = wgn(1,1,-3);
 %y = y+noise
 z =  zc + zr*sqrt(1-((x-xc)^2/xr^2)-((y-yc)^2/yr^2));
 
