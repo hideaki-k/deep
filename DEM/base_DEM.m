@@ -162,7 +162,7 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
         zlim([-50 50])
         colorbar
         view(3)
-        savefig('model')
+        savefig('model.png')
         figure(2)
         s = surface(label_data);
         s.EdgeColor = 'none';
@@ -171,7 +171,7 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
         zlim([-10 24])
         colorbar
         view(3)
-        savefig('label')
+        savefig('label.png')
     end
     %% 動画 v open
 

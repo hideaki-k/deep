@@ -12,7 +12,7 @@ F = 8
 
 def Get_Slope(h, w, D):
     roi = D[(h-F//2):(h+F//2),(w-F//2):(w+F//2)]
-    laplacian =  cv2.Laplacian(D,cv2.CV_64F)
+    #  laplacian =  cv2.Laplacian(D,cv2.CV_64F)
     slope = np.amax(roi) - np.amin(roi)
 
     return slope
@@ -42,7 +42,7 @@ for file in files:
                 S[row][col] = s
             if r > R[row][col]:
                 R[row][col] = r
-    print(S)
+    #print(S)
     fig = plt.figure()
     ax1 = fig.add_subplot(1,3,1)
     ax2 = fig.add_subplot(1,3,2)
@@ -50,7 +50,8 @@ for file in files:
     ax1.imshow(DEM)
     ax2.imshow(S) 
     ax3.imshow(S>3)
-
-    plt.show()
+    fig.savefig('figure01.jpg')
+    #plt.show()
+    break
 
     
