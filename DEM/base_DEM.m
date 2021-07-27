@@ -1,15 +1,16 @@
-function f=base_DEM(k,mode,pix,angle,folder_name)
+function f=base_DEM(k,mode,pix,angle,folder_name,is_noise)
     f = mode;
     %% generate background fractal terrain
-    x = [0:0.1:128];
-    y = [0:0.1:128];
+    x = [0:0.1:64];
+    y = [0:0.1:64];
     %% Generate the random terrain with Perlin noise
-    % Initial calculation
-%     [X, Y] = meshgrid(x,y);
-%     f = @(t) myinterpolation(t);
-%     H = perlin_2d(f, 1, X, Y);
-%     size(H); % 301   301
-    
+    if is_noise == true
+        % Initial calculation
+        [X, Y] = meshgrid(x,y);
+        f = @(t) myinterpolation(t);
+        H = perlin_2d(f, 1, X, Y);
+        size(H); % 301   301
+    end
     %% init parameter
     size_factor = pix;
     time_scale = 20;
@@ -18,11 +19,12 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
 
     model = zeros(size_factor,size_factor);
     label_data = zeros(size_factor,size_factor);
+    time_data = zeros(size_factor,size_factor,time_scale);
     direct = round(rand(1),0);
     up_down= round(rand(1),0);
     if up_down == 1
         up_down = 1;
-    else up_down == 0
+    else 
         up_down = -1;
     end
     if direct==1
@@ -41,7 +43,7 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
     end
     
     %% set parameter
-    R = 15 + 5*abs(randn(1)); %クレータ半径
+    R = 10 + 3*randn(1); %クレータ半径
     % H_r = 150 + abs(5*randn())
     H_ro = 0.036*(2*R)^1.014;
     H_r = H_ro;
@@ -50,16 +52,16 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
     % RANGE
     alpha = (H_c+H_r)*R/(H_c+H_ro); %クレータ内縁
     beta = R+(1-(H_c+H_r)/(H_c+H_ro))*W_r ;%クレータ外縁
-    dist_to_zero = 20; %標高ゼロまでの距離
+    dist_to_zero = 125*R; %標高ゼロまでの距離
     A = -3*R^3 + 2*R^2*beta + 2*R*beta^2 + 2*beta^3;
    %%  
     %ボルダー1　の中心座標
-    xr = 10+abs(5*randn());
-    yr = 10+abs(5*randn());
-    zr = 4+abs(5*randn());
+    xr = R+abs(5*randn());
+    yr = R+abs(5*randn());
+    zr = 3+abs(1*randn());
     
     a = 0;
-    b = 128;
+    b = pix;
     xc = (b-a).*rand(1) + a;
     yc = (b-a).*rand(1) + a;
     zc = 0;
@@ -81,11 +83,11 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
         end
         cnt=cnt+1;
     end
-    %% クレータ付与
+    %% 障害物付与
     for i =  1:1:size_factor
         for j = 1:1:size_factor
             
-            % ボルダー
+            %% ボルダー 追加
 %             if j > yc
 %                 if j < yc + yr*sqrt(1-(i-xc)^2/xr^2)
 %                     z = generate_ellipsoid(i,j,xc, yc, zc, xr, yr, zr);
@@ -97,7 +99,7 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
 %                     model(i,j) = z+H(i,j) ;
 %                 end
 %             end
-%                 
+            %% クレータ　追加
             % y = wgn(1,1,-3);
              r = sqrt(abs(i-x_center)^2 + abs(j-y_center)^2);
              r_ = sqrt(abs(i-x_center_2)^2 + abs(j-y_center_2)^2);
@@ -128,27 +130,33 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
     %                  elseif r_ <= beta
     %                     h =  (H_r*(R+W_r)^3*A)/(W_r*beta^4*(R-beta)^2*(3*R^2+3*R*W_r+W_r^2)) * (r_-R)^2*(r_-beta*(1+(beta^3-R^3)/A))+H_r;
     %                  end
-
-             elseif r <= dist_to_zero || r_ <= dist_to_zero
-                 if r <= dist_to_zero
+            else  
+%             elseif r <= dist_to_zero || r_ <= dist_to_zero
+%                 if r <= dist_to_zero
                      h =  H_r*(R+W_r)^3/((R+W_r)^3-R^3)*(r/R)^(-3) - (H_r*R^3)/((R+W_r)^3-R^3);
-                 elseif r_ <= dist_to_zero
-                     h =  H_r*(R+W_r)^3/((R+W_r)^3-R^3)*(r_/R)^(-3) - (H_r*R^3)/((R+W_r)^3-R^3);
-                 end
+%                 elseif r_ <= dist_to_zero
+                     h = h + H_r*(R+W_r)^3/((R+W_r)^3-R^3)*(r_/R)^(-3) - (H_r*R^3)/((R+W_r)^3-R^3);
+%                 end
 
-             else    
+%             else    
                % h = H_r*(R+W_r)^3/((R+W_r)^3-R^3)*(r/R)^(-3) - (H_r*R^3)/((R+W_r)^3-R^3);
                 %h = h + H_r*(R+W_r)^3/((R+W_r)^3-R^3)*(r_/R)^(-3) - (H_r*R^3)/((R+W_r)^3-R^3);
-                h = -1;
+%                h = 0;
              end
-
-             model(i,j) = model(i,j) + h; %+0.8*H(i,j)  ;
+             if is_noise == true
+                 noise_min = 0;
+                 noise_max = 0.8;
+                 noise_val = (noise_max-noise_min).*rand(1)+noise_min;
+                 model(i,j) = model(i,j) + h + noise_val * H(i,j)  ;
+             else
+                model(i,j) = model(i,j) + h ;
+             end
         end
     end
     %% ボルダー付与
     
     
-    %model;
+    model;
     model = round(model,0);
 
     
@@ -159,7 +167,7 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
         s.EdgeColor = 'none';
         xlabel('X');
         ylabel('Y');
-        zlim([-50 50])
+        zlim([-20 20])
         colorbar
         view(3)
         savefig('model.png')
@@ -181,10 +189,11 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
     end
     time = 0;
     lidar_data = zeros(size_factor,size_factor);
-    time_data = zeros(size_factor,size_factor);
+
     max_elevation = max(model(:));
-    min_elevation = max_elevation-time_scale;
+    min_elevation = max_elevation-10;
     for i = max_elevation:-1:min_elevation
+        i;
         time = time+1;
         lidar_data(model==i)=1;
         time_data(:,:,time) = lidar_data;
@@ -206,9 +215,9 @@ function f=base_DEM(k,mode,pix,angle,folder_name)
     if mode == 0
 
         filenum = string(k);
-        model = mat2gray(model);
+        kyorigazou = mat2gray(model);
         filename = folder_name+"/model/model_"+filenum+'.png';
-        imwrite(model,filename);
+        imwrite(kyorigazou,filename);
         
         filename = folder_name+"/label/label_"+filenum;
         save(filename,'label_data');
