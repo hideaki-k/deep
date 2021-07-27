@@ -18,97 +18,9 @@ import pandas as pd
 import scipy.io
 from torchsummary import summary
 import argparse
-class TrainLoadDataset(torch.utils.data.Dataset):
-
-    def __init__(self, N=1000, dt=1e-3, num_time=20, max_fr=1000):
-        num_images = N #生成する画像数
-        length = 64       #画像のサイズ
-        
-        self.N = N
-        num_time = num_time 
-        max_fr = max_fr
-        dt = dt
-        #imgs = np.zeros([num_images, 1, length, length]) #ゼロ行列を生成、入力画像
-        #imgs_ano = np.zeros([num_images, 1, length, length]) # 出力画像
-        imgs = np.zeros([num_images, length, length]) #ゼロ行列を生成、入力画像
-        imgs_ano = np.zeros([num_images, length, length]) # 出力画像
-
-        # rectangle 生成
-        for i in range(num_images):
-            centers = []
-            img = np.zeros([64, 64])
-            img_ano = np.zeros([64, 64])
-            for j in range(6):
-                img, img_ano, centers = rectangle(img, img_ano, centers, 24)
-            #plt.imshow(img_ano)
-            #plt.show()
-            imgs[i, :, :] = img
-            imgs_ano[i, :, :] = img_ano
-
-
-        imgs = torch.tensor(imgs, dtype=torch.float32)    # imgs = torch.Size([1000, 1, 64, 64]) -> imgs :  torch.Size([1000, 64, 64])
-        imgs_ano = torch.tensor(imgs_ano, dtype=torch.float32)
-
-
-        imgs = imgs.reshape(imgs.shape[0],-1)/255
-        imgs_ano = imgs_ano.reshape(imgs_ano.shape[0],-1)/255
-
-
-        data_set = TensorDataset(imgs, imgs_ano)
-        data_loader = DataLoader(data_set, batch_size = 256, shuffle = True)
-
-        print("imgs : ", imgs.shape) # imgs = torch.Size([1000, 1, 64, 64])
-        print("data_set : ",data_set)
-
-        data_id = 2
-        imgs_binary = np.heaviside(imgs[data_id],0)
-        img = imgs_binary.reshape(64,64)
-        """
-        plt.imshow(img)
-        plt.show()
-        plt.imsave("imgs_binary.png",img)
-        """
-        img_ = imgs_ano[data_id].reshape(64,64)
-
-        
-        plt.imsave("imgs_ano.png",img_)
-        
-        x = np.zeros((N,4096,num_time))
-        y = np.zeros((N,4096))
-        
-
-        for i in tqdm(range(N)):
-            fr = max_fr * np.repeat(np.expand_dims(np.heaviside(imgs[i],[0]),1),num_time,axis=1)
-            x[i] = np.where(np.random.rand(4096, num_time) < fr*dt, 1, 0)
-            y[i] = imgs_ano[i]
-
-        self.x = x.astype(np.float32)
-        self.y = y.astype(np.float32)
-
-        
-        print("self.x shape:",self.x.shape)
-        print(np.array(self.x[data_id].shape)) #[4096  100]
-        sum = np.sum(self.x[data_id],axis=1)
-        """
-        fig = plt.figure(figsize=(6,3))
-        ax1 = fig.add_subplot(1,2,1)
-        ax1.imshow(np.reshape(sum,(64,64)))
-        ax2 = fig.add_subplot(1,2,2)
-        ax2.imshow(np.reshape(self.x[data_id][:,0],(64,64)))
-        plt.show()
-        print("x shape :" ,x.shape)
-        #rectangle_record(x,num_time,data_id=2)
-        """
-    
-    def __len__(self):
-        return self.N
-
-    def __getitem__(self, i):
-        return self.x[i], self.y[i]    
 
 class LoadDataset(torch.utils.data.Dataset):
     def __init__(self, csv_file):
-       
         self.df = pd.read_csv(csv_file)
         #self.data_transform = data_transform
 
@@ -124,7 +36,7 @@ class LoadDataset(torch.utils.data.Dataset):
         label = label['label_data']
         #print("image : ",image.shape)
         #print("label : ",label.shape)
-        image = image.reshape(4096,21)
+        image = image.reshape(4096,20)
         #print("image : ",image.shape)
         image = image.astype(np.float32)
         #label = label.astype(np.int64)
@@ -132,26 +44,30 @@ class LoadDataset(torch.utils.data.Dataset):
         label = label.reshape(4096)
         label = label.astype(np.float32)
         return image, label
-     
-train_dataset = LoadDataset("semantic_img_loc.csv")
-data_id = 2
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch', '-b', type=int, default=128)
 parser.add_argument('--epoch', '-e', type=int, default=50)
 parser.add_argument('--time', '-t', type=int, default=20,
                         help='Total simulation time steps.')
 parser.add_argument('--rec', '-r', action='store_true' ,default=False)  # -r付けるとTrue                  
+parser.add_argument('--forget', '-f', action='store_true' ,default=False) 
+parser.add_argument('--dual', '-d', action='store_true' ,default=False)
 args = parser.parse_args()
 
 
 print("***************************")
+train_dataset = LoadDataset("semantic_img_loc.csv")
+test_dataset = LoadDataset("semantic_eval_loc.csv")
+data_id = 2
 print(np.array(train_dataset[data_id][0]).shape) #(784, 100) 
 train_iter = DataLoader(train_dataset, batch_size=args.batch, shuffle=False)
+test_iter = DataLoader(test_dataset, batch_size=args.batch, shuffle=False)
 
 # ネットワーク設計
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # 畳み込みオートエンコーダー　リカレントSNN　
-model = network.SNU_Network(num_time=args.time,l_tau=0.8,rec=args.rec, gpu=True,batch_size=args.batch)
+model = network.SNU_Network(num_time=args.time,l_tau=0.8,rec=args.rec, forget=args.forget, dual=args.dual, gpu=True,batch_size=args.batch)
 
 # 全結合 リカレントSNN
 # model = network.Fully_Connected_Gated_SNU_Net(rec=args.rec)
@@ -171,6 +87,11 @@ acc_hist_2 = []
 acc_hist_3 = []
 acc_hist_4 = []
 acc_hist_5 = []
+acc_eval_hist1 = []
+acc_eval_hist2 = []
+acc_eval_hist3 = []
+acc_eval_hist4 = []
+acc_eval_hist5 = []
 
 for epoch in tqdm(range(epochs)):
     running_loss = 0.0
@@ -181,6 +102,12 @@ for epoch in tqdm(range(epochs)):
     acc_3 = []
     acc_4 = []
     acc_5 = []
+    eval_acc_1 = []
+    eval_acc_2 = []
+    eval_acc_3 = []
+    eval_acc_4 = []
+    eval_acc_5 = []
+
     print("EPOCH",epoch)
     # モデル保存
     if epoch == 0 :
@@ -189,12 +116,10 @@ for epoch in tqdm(range(epochs)):
     with tqdm(total=len(train_dataset),desc=f'Epoch{epoch+1}/{epochs}',unit='img')as pbar:
         for i,(inputs, labels) in enumerate(train_iter, 0):
             optimizer.zero_grad()
+
             inputs = inputs.to(device)
-            #print("i:",i) #torch.Size([256, 4096, 10])
-            #torch.set_printoptions(threshold = 1000000)
-            #print("labels:",labels) #torch.Size([256, 4096])
-            #labels = labels.to(device,dtype=torch.long)
             labels = labels.to(device)
+            torch.cuda.memory_summary(device=None, abbreviated=False)
             loss, pred, _, iou, cnt = model(inputs, labels)
             #iou = 各発火閾値ごとに連なり[??(i=1),??(i=2),,,,]
             pred,_ = torch.max(pred,1)
@@ -205,38 +130,68 @@ for epoch in tqdm(range(epochs)):
             acc_4.append(iou[3])
             acc_5.append(iou[4])
     
-
-            loss.backward()
+            torch.autograd.set_detect_anomaly(True)
+            loss.backward(retain_graph=True)
+            running_loss += loss.item()
+            local_loss.append(loss.item())
+            del loss
             optimizer.step()
 
             # print statistics
-            running_loss += loss.item()
-            local_loss.append(loss.item())
+            
+            
             if i % 100 == 99:
                 print('[{:d}, {:5d}] loss: {:.3f}'
                             .format(epoch + 1, i + 1, running_loss / 100))
                 running_loss = 0.0
+
     
+    with torch.no_grad():
+        for i,(inputs, labels) in enumerate(test_iter, 0):
+            inputs = inputs.to(device)
+            labels = labels.to(device)
+            loss, pred, _, iou, cnt = model(inputs, labels)
+            pred,_ = torch.max(pred,1)
+            eval_acc_1.append(iou[0])
+            eval_acc_2.append(iou[1])
+            eval_acc_3.append(iou[2])
+            eval_acc_4.append(iou[3])
+            eval_acc_5.append(iou[4])
+    
+
     mean_acc_1 = np.mean(acc_1)
     mean_acc_2 = np.mean(acc_2)
     mean_acc_3 = np.mean(acc_3)
     mean_acc_4 = np.mean(acc_4)
     mean_acc_5 = np.mean(acc_5)
-
+    
+    mean_eval_acc_1 = np.mean(eval_acc_1)
+    mean_eval_acc_2 = np.mean(eval_acc_2)
+    mean_eval_acc_3 = np.mean(eval_acc_3)
+    mean_eval_acc_4 = np.mean(eval_acc_4)
+    mean_eval_acc_5 = np.mean(eval_acc_5)
+    
     print("mean iou ",mean_acc_5)
     acc_hist_1.append(mean_acc_1)
     acc_hist_2.append(mean_acc_2)
     acc_hist_3.append(mean_acc_3)
     acc_hist_4.append(mean_acc_4)
     acc_hist_5.append(mean_acc_5)
-
-    mean_loss = np.mean(local_loss)
+    
+    acc_eval_hist1.append(mean_eval_acc_1)
+    acc_eval_hist2.append(mean_eval_acc_2)
+    acc_eval_hist3.append(mean_eval_acc_3)
+    acc_eval_hist4.append(mean_eval_acc_4)
+    acc_eval_hist5.append(mean_eval_acc_5)
+    
+    mean_loss = np.mean(local_loss) 
     print("mean loss",mean_loss)
     loss_hist.append(mean_loss)
 
 fig = plt.figure(facecolor='oldlace')
-ax1 = fig.add_subplot(1,2,1)
-ax2 = fig.add_subplot(1,2,2)
+ax1 = fig.add_subplot(1,3,1)
+ax2 = fig.add_subplot(1,3,2)
+ax3 = fig.add_subplot(1,3,3)
 ax1.set_title('loss')
 ax1.plot(loss_hist)
 ax1.set_xlabel('EPOCH')
@@ -250,87 +205,21 @@ ax2.plot(acc_hist_3,label='3')
 ax2.plot(acc_hist_4,label='4')
 ax2.plot(acc_hist_5,label='5')
 ax2.legend(loc=0)
+
+ax3.set_title('Evaluaate IOU')
+ax3.grid()
+ax3.plot(acc_eval_hist1,label='1')
+ax3.plot(acc_eval_hist2,label='2')
+ax3.plot(acc_eval_hist3,label='3')
+ax3.plot(acc_eval_hist4,label='4')
+ax3.plot(acc_eval_hist5,label='5')
 fig.tight_layout()
 
 fig.savefig('models/loss--IOU.jpg')
 plt.show()
 
-"""
-fig2 = plt.figure(figsize=(3.3,2),dpi=150)
-plt.plot(acc_hist_1)
-plt.plot(acc_hist_2)
-plt.plot(acc_hist_3)
-plt.plot(acc_hist_4)
-plt.plot(acc_hist_5)
-plt.xlabel("epoch")
-plt.ylabel("IOU SCORE")
-plt.show()
-fig2.savefig('models/IOU.jpg')
-"""
 torch.save(model.state_dict(), "models/models_state_dict_end.pth")
  # モデル読み込み
 print("success model saving")
 
-
-"""
-model.eval()            #評価モード
-inputs_, label_ = test_img()
-inputs_ = inputs_.to(device)
-label_ = label_.to(device)
-print("inputs_",inputs_.shape)
-print("label_",label_.shape)
-label, pred, result = model(inputs_, label_)
-print("result shape :",result.shape)
-
-device2 = torch.device('cpu')
-result = result.to(device2)
-result = result.detach().clone().numpy()
-# MP4  レコード
-record(result)
-"""
-
-
-"""
-plt.figure(figsize=(3.3,2),dpi=150)
-plt.plot(acc_hist)
-plt.xlabel("epoch")
-plt.ylabel("acc")
-plt.show()
-print("finish")
-"""
-
-
-
-
-
-"""動画生成
-
-import numpy as np
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
-import cv2
-OUT_FILE_NAME = "build_img/output_video.mp4"
-#OUT_FILE_NAME = "output_video.avi"
-fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-dst = cv2.imread('build_img/image.png') #一度、savefigしてから再読み込み
-rows,cols,channels = dst.shape
-out = cv2.VideoWriter(OUT_FILE_NAME, int(fourcc), int(10), (int(cols), int(rows)))
-fig = plt.figure()
-ims = []
-
-for i in range(num_time):
-  print(x[data_id][:,i].reshape(64,64).shape)
-  im=plt.imshow(x[data_id][:,i].reshape(64,64), cmap=plt.cm.gray_r,animated=True)
-  ims.append([im])
-  #plt.show("im",im)
-  print(ims)
-  ani = animation.ArtistAnimation(fig, ims, interval=100)
-  fig1=plt.pause(0.001)
-  #Gifアニメーションのために画像をためます
-  plt.savefig("build_img/image"+str(i)+".png")
-  dst = cv2.imread("build_img/image"+str(i)+'.png')
-  out.write(dst) #mp4やaviに出力します
-  print(i)
-
-"""
 
