@@ -155,10 +155,10 @@ function f=base_DEM(k,mode,pix,angle,folder_name,is_noise)
     end
     %% ボルダー付与
     
-    
+    if mode ~= 2     
     model;
     model = round(model,0);
-
+    end
     
     %% 三次元プロット
     if mode==2
@@ -168,18 +168,24 @@ function f=base_DEM(k,mode,pix,angle,folder_name,is_noise)
         xlabel('X');
         ylabel('Y');
         zlim([-20 20])
+        colormap gray
         colorbar
         view(3)
-        savefig('model.png')
+        savefig('model.fig')
+       
         figure(2)
-        s = surface(label_data);
+        s = surf(label_data);
         s.EdgeColor = 'none';
         xlabel('X');
         ylabel('Y');
         zlim([-10 24])
+        colormap turbo
         colorbar
         view(3)
-        savefig('label.png')
+        savefig('label.fig')
+        
+
+
     end
     %% 動画 v open
 
