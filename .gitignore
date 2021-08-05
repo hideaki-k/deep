@@ -30,6 +30,7 @@ semantic_seg/build_img/original_image_3.png
 *.asv
 *.jpg
 *.jpg
+*.png
 *.csv
 *.jpg
 *.jpg
@@ -42,3 +43,10 @@ semantic_seg/1_log/MNIST/raw/t10k-labels-idx1-ubyte
 semantic_seg/1_log/MNIST/raw/train-images-idx3-ubyte
 semantic_seg/1_log/MNIST/raw/train-labels-idx1-ubyte
 *.csv
+DEM/label.fig
+DEM/model.fig
+pytorch_test/Surrogate_BP/.vscode/settings.json
+semantic_seg/image_loc.csv
+semantic_seg/image_loc.csv
+DEM/64pix_(0deg)_dem(noisy)/hazard_label/label_10
+DEM/64pix_(0deg)_dem(noisy)/hazard_label/label_1000
