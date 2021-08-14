@@ -1,3 +1,10 @@
+# フロー
+
+1. MATLAB DEM\iterator.mでランダムDEMを生成
+2. semantic_img_loc.csv senabtic_eval_loc.csvに変更を書き込む
+3. python hazard_detect.pyにてhazard_labelを作成
+4. DEM_autoencoder_segmentation.pyにて対象CSVを指定して実行
+
 # dem_autoencoder_segmentation.py
 64pixの領域から長方形を塗りつぶすタスク
 
