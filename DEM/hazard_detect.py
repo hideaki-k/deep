@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import cv2
 import os
 
-new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)/hazard_label'
+new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(5deg)_dem(noisy)/hazard_label'
 os.makedirs(new_dir_path, exist_ok=True)
-files = glob.glob(r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)/model/*.mat')
+files = glob.glob(r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(5deg)_dem(noisy)/model/*.mat')
 
 rei = scipy.io.loadmat(files[1])['DEM']
 print(rei)
@@ -61,9 +61,21 @@ for file in files:
                 S[row][col] = suiheido
             if heitando > R[row][col]:
                 R[row][col] = heitando
-    
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(1,3,1)
+    ax2 = fig.add_subplot(1,3,2)
+    ax3 = fig.add_subplot(1,3,3)
+    ax1.set_title('original')
+    ax1.imshow(DEM)
+    ax2.set_title('suihei')
+    ax2.imshow(S) 
+    ax3.set_title('heitan')
+    ax3.imshow(R)
+    plt.show()
     Vthm = np.mean(S)
     Vths = np.mean(R)
+
     S = S>Vthm
     R = R>1.5*Vths
     hazard = (S|R)
