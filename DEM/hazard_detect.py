@@ -8,13 +8,14 @@ import cv2
 import os
 from ransac import *
 from sklearn.preprocessing import MinMaxScaler
+import time
 
-new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(5deg)_dem(noisy)/hazard_label'
+new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem/hazard_label'
 os.makedirs(new_dir_path, exist_ok=True)
-files = glob.glob(r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(5deg)_dem(noisy)/model/*.mat')
+files = glob.glob(r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem/model/*.mat')
 
 rei = scipy.io.loadmat(files[1])['true_DEM']
-print(rei)
+#print(rei)
 height = rei.shape[0]
 width = rei.shape[1]
 # ウィンドウ大きさ
@@ -42,22 +43,22 @@ def plot_plane(a, b, c, d):
     xx, yy = np.mgrid[:10, :10]
     return xx, yy, (-d - a * xx - b * yy) / c
     
-def Get_Slope(h, w, D, mu, sigma):
-    #fig = plt.figure()
-    #ax = mplot3d.Axes3D(fig)
-    
+def Get_Slope(roi, mu, sigma):
+    """
+    fig = plt.figure()
+    ax = mplot3d.Axes3D(fig)
+    """
     n = 100
-    max_iterations = 100
+    max_iterations = 30
     goal_inliers = n * 0.3
 
     xyzs = np.zeros((64, 3))
 
-    roi = D[(h-F//2):(h+F//2),(w-F//2):(w+F//2)]
     #print(roi.shape)
     #print(roi)
     i = 0
-    for x in range(8):
-        for y in range(8):
+    for x in range(F):
+        for y in range(F):
     
             z = roi[x][y]
             #print(i,x,y,z)
@@ -66,102 +67,153 @@ def Get_Slope(h, w, D, mu, sigma):
             xyzs[i][2] = z
             i += 1
     #print(xyzs)
-    #ax.scatter3D(xyzs.T[0], xyzs.T[1], xyzs.T[2])
+
     # RANSAC
     m, best_inliers = run_ransac(xyzs, estimate, lambda x, y: is_inlier(x, y, 0.01), 3, goal_inliers, max_iterations)
     a, b, c, d = m
     xx, yy, zz = plot_plane(a, b, c, d)
-    #ax.plot_surface(xx, yy, zz, color=(0, 1, 0, 0.5))
-    #plt.show()
-    ans = math.degrees(math.atan(abs(a/c)) + math.degrees(math.atan(abs(b/c))))
-    print(ans)
-    return ans
+
+    """
+    ax.scatter3D(xyzs.T[0], xyzs.T[1], xyzs.T[2])
+    ax.plot_surface(xx, yy, zz, color=(0, 1, 0, 0.5))
+    """
+    smooth = 1e-6
+    #ans = math.degrees(math.atan(abs(a/(c+smooth))) + math.degrees(math.atan(abs(b/(c+smooth)))))
+    #ans_tate = math.degrees(math.atan(abs(a/(c+smooth))))
+    #ans = math.degrees(math.atan(abs(b/(c+smooth))))
+    #ax.set_title("tate,yoko")
+    #print("deg_tate,deg:",ans_tate,ans)
+    ans = c/(a**2+b**2+c**2)
+    """
+    plt.show()
+    """
+    return ans, m
 
     
 
-def Get_Roughness(h, w, D, mu, sigma):
+def Get_Roughness(cropped, m, x, y):
+    diff = []
+    a,b,c,d = m
+    smooth = 1e-6
+    #print("cropped.shape",cropped.shape)
+    for x in range(F):
+        for y in range(F):
+            z = (-a/(c+smooth))*x + (-b/(c+smooth))*y + (-d/(c+smooth))
+            #print("z",z)
+            #print("cropped[x][y]-z",cropped[x][y]-z)
+            diff_ = cropped[x][y]-z
+            if diff_ > 1:
+                pass
+            else:
+                diff.append(cropped[x][y]-z)
+    roughness = max(diff)   
+    return roughness
 
-    roi = D[(h-F//2):(h+F//2),(w-F//2):(w+F//2)]
-    s_roi = np.std(roi)
-    heitando = s_roi/sigma
-    return heitando
-
-print(height,width)
 
 
 for file in files:
-    print('input : ',file)
+    start = time.time()
     target = '\model_'
     idx = file.find(target)
     cnt = file[idx+7:]
     idx = cnt.find('.mat')
     cnt = cnt[:idx]
     DEM = scipy.io.loadmat(file)['true_DEM'] 
-
+    #print(DEM.dtype)
+    DEM = np.array(DEM, dtype='float32')
     mu = np.mean(DEM)
     sigma = np.std(DEM)
-    print("heikin ",mu)
 
- 
+    scale = 1.0
+   
+
+    rotate_list = [0.0, 30.0, 60.0]
+
     V = np.zeros((height,width)) # safety for each pixel
     S = np.zeros((height,width)) # slope for each pixel
     R = np.zeros((height,width)) # roughness for each pixel
-    
+    size = (F,F)
     for row in range(F//2, height-(F//2), 1):
         for col in range(F//2, width-(F//2), 1):
-            suiheido = Get_Slope(row, col, DEM, mu, sigma)
-            print("suiheido:",suiheido)
-            heitando = Get_Roughness(row, col, DEM, mu, sigma)
-            S[row][col] = suiheido
-            print("heitando",heitando)
- 
+            for angle in rotate_list:
+                center = (int(col), int(row))
+                trans = cv2.getRotationMatrix2D(center, angle, scale)
+                DEM2 = cv2.warpAffine(DEM, trans, (width,height),cv2.INTER_CUBIC)
+              
+                #roi = DEM2[(row-F//2):(row+F//2),(col-F//2):(col+F//2)]
+                    # 切り抜く。
+                cropped = cv2.getRectSubPix(DEM2, size, center)
 
-            if heitando > R[row][col]:
-                R[row][col] = heitando
+                """
+                fig = plt.figure()
+                ax1 = fig.add_subplot(1,3,1)
+                ax2 = fig.add_subplot(1,3,2)
+                ax3 = fig.add_subplot(1,3,3)
+                ax1.imshow(DEM)
+                ax2.imshow(DEM2)
+                ax3.imshow(cropped)
+                plt.show()
+                """
+                
+                suiheido, m = Get_Slope(cropped, mu, sigma)
+
+                if suiheido > S[row][col]: # ワーストケースを記録
+                    S[row][col] = suiheido
+
+                # 画像外枠境界線で粗さの取得を禁止する
+                if row==F//2 or col==F//2:
+                    heitando=0
+                elif row==height-(F//2)-1 or col==width-(F//2)-1:
+                    heitando=0
+                else:
+                    heitando = Get_Roughness(cropped, m, row, col)   
+
+                if heitando > R[row][col]:
+                    R[row][col] = heitando
+                
+
     S = min_max(S)
-    np.set_printoptions(threshold=np.inf)
-    print("S:",S)
-    print("R:",R)
+    R = min_max(R)
+    #np.set_printoptions(threshold=np.inf)
+    #print("S:",S)
+    #print("R:",R)
     fig = plt.figure()
-    ax1 = fig.add_subplot(1,3,1)
-    ax2 = fig.add_subplot(1,3,2)
-    ax3 = fig.add_subplot(1,3,3)
+    ax1 = fig.add_subplot(2,3,1)
+    ax2 = fig.add_subplot(2,3,2)
+    ax3 = fig.add_subplot(2,3,3)
     ax1.set_title('original')
     ax1.imshow(DEM)
-    ax2.set_title('suihei')
-    ax2.imshow(S) 
-    ax3.set_title('heitan')
-    ax3.imshow(R)
-    plt.show()
+    ax2.set_title('slope')
+    ax2.imshow(S,cmap='jet') 
+    ax3.set_title('roughness')
+    ax3.imshow(R,cmap='jet')
+    
     Vthm = np.mean(S)
     Vths = np.mean(R)
 
-    S = S>Vthm
-    R = R>1.5*Vths
+    S = S>1.5*Vthm
+    R = R>1.0*Vths
     hazard = (S|R)
 
     save_path = new_dir_path + '/label_'+ cnt + '.mat'
-    print('output : ',save_path)
+    #print('output : ',save_path)
     scipy.io.savemat(save_path, {'label_data':hazard})
 
-    #np.set_printoptions(threshold=np.inf)
-    #print(S+R)
- 
-    
-    fig = plt.figure()
-    ax1 = fig.add_subplot(1,4,1)
-    ax2 = fig.add_subplot(1,4,2)
-    ax3 = fig.add_subplot(1,4,3)
-    ax4 = fig.add_subplot(1,4,4)
-    ax1.imshow(DEM)
-    ax2.set_title('suiheido')
-    ax2.imshow(S) 
-    ax3.imshow(hazard)
-    ax4.set_title('heitando')
-    ax4.imshow(R)
-    fig.savefig('figure01.jpg')
-    plt.show()
-  
+    ax4 = fig.add_subplot(2,3,4)
+    ax4.set_title('hazard_thr')
+    ax4.imshow(hazard)
+    ax5 = fig.add_subplot(2,3,5)
+    ax5.set_title('slope_thr')
+    ax5.imshow(S)
+    ax6 = fig.add_subplot(2,3,6)
+    ax6.set_title('roughness_thr')
+    ax6.imshow(R)
+    save_path = new_dir_path + '/label_'+ cnt + '.jpg'
+    plt.savefig(save_path)
+
+    #一枚当たりの処理時間を表示
+    elapsed_time = time.time() - start
+    print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")
     
 
     
