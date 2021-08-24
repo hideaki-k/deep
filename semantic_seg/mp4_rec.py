@@ -78,9 +78,10 @@ def record(x,num_time=20,data_id=2): # x : output
     ani.save(str(new_dir_path)+"/outputs.gif", writer="pillow", fps=10)
     #plt.show()
 
-def heatmap(x,num_time=20,data_id=2,label_img=None): # 画像を時間軸方向に積算してヒートマップに
+def heatmap(x,kyorigazou,num_time=20,data_id=2,label_img=None): # 画像を時間軸方向に積算してヒートマップに
     print("x",x.shape)
     x = x[data_id].squeeze(1)
+    kyorigazou = kyorigazou[data_id]
     #x = x[data_id]
     print("x",x.shape) # x (11, 64, 64)
     sum_x = np.sum(x,axis=0)
@@ -115,7 +116,7 @@ def heatmap(x,num_time=20,data_id=2,label_img=None): # 画像を時間軸方向�
     ax2 = fig.add_subplot(2,4,2)
     ax3 = fig.add_subplot(2,4,3)
     ax4 = fig.add_subplot(2,4,4)
-
+    ax_ = fig.add_subplot(2,4,5)
     ax5 = fig.add_subplot(2,4,6)
     ax6 = fig.add_subplot(2,4,7)
     ax7 = fig.add_subplot(2,4,8)
@@ -132,6 +133,9 @@ def heatmap(x,num_time=20,data_id=2,label_img=None): # 画像を時間軸方向�
 
     ax4.set_title('output(4)')
     ax4.imshow(ref_img_4,cmap='bwr')
+
+    ax_.set_title('kyorigazou')
+    ax_.imshow(kyorigazou)
 
     ax5.set_title('IOU image(2)')
     ax5.imshow(IoU_img_2)
