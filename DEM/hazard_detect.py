@@ -12,10 +12,14 @@ import time
 
 new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem/hazard_label'
 os.makedirs(new_dir_path, exist_ok=True)
-files = glob.glob(r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem/model/*.mat')
+original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem/model/'
+file_mei = 11
+add_path_ = 'model_'+str(file_mei)+'.mat'
+read_path_ = os.path.join(original_DEM_path,add_path_)
 
-rei = scipy.io.loadmat(files[1])['true_DEM']
-#print(rei)
+
+rei = scipy.io.loadmat(read_path_)['true_DEM']
+print(rei)
 height = rei.shape[0]
 width = rei.shape[1]
 # ウィンドウ大きさ
@@ -48,6 +52,7 @@ def Get_Slope(roi, mu, sigma):
     fig = plt.figure()
     ax = mplot3d.Axes3D(fig)
     """
+
     n = 100
     max_iterations = 30
     goal_inliers = n * 0.3
@@ -87,6 +92,8 @@ def Get_Slope(roi, mu, sigma):
     """
     plt.show()
     """
+    #一枚当たりの処理時間を表示
+
     return ans, m
 
     
@@ -111,13 +118,14 @@ def Get_Roughness(cropped, m, x, y):
 
 
 
-for file in files:
+for file_num in range(430,7680):
+    original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem/model/'
+    add_path = 'model_'+str(file_num)+'.mat'
+    file = os.path.join(original_DEM_path,add_path)
+    print('READ_PATH:',file)
     start = time.time()
-    target = '\model_'
-    idx = file.find(target)
-    cnt = file[idx+7:]
-    idx = cnt.find('.mat')
-    cnt = cnt[:idx]
+
+
     DEM = scipy.io.loadmat(file)['true_DEM'] 
     #print(DEM.dtype)
     DEM = np.array(DEM, dtype='float32')
@@ -195,8 +203,8 @@ for file in files:
     R = R>1.0*Vths
     hazard = (S|R)
 
-    save_path = new_dir_path + '/label_'+ cnt + '.mat'
-    #print('output : ',save_path)
+    save_path = new_dir_path + '/label_'+ str(file_num) + '.mat'
+    print('SAVE_PATH:',save_path)
     scipy.io.savemat(save_path, {'label_data':hazard})
 
     ax4 = fig.add_subplot(2,3,4)
@@ -208,7 +216,7 @@ for file in files:
     ax6 = fig.add_subplot(2,3,6)
     ax6.set_title('roughness_thr')
     ax6.imshow(R)
-    save_path = new_dir_path + '/label_'+ cnt + '.jpg'
+    save_path = new_dir_path + '/label_'+ str(file_num) + '.jpg'
     plt.savefig(save_path)
 
     #一枚当たりの処理時間を表示
