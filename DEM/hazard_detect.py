@@ -10,9 +10,9 @@ from ransac import *
 from sklearn.preprocessing import MinMaxScaler
 import time
 
-new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem/hazard_label'
+new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)/hazard_label'
 os.makedirs(new_dir_path, exist_ok=True)
-original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem/model/'
+original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)/model/'
 file_mei = 11
 add_path_ = 'model_'+str(file_mei)+'.mat'
 read_path_ = os.path.join(original_DEM_path,add_path_)
@@ -45,7 +45,8 @@ def is_inlier(coeffs, xyz, threshold):
 
 def plot_plane(a, b, c, d):
     xx, yy = np.mgrid[:10, :10]
-    return xx, yy, (-d - a * xx - b * yy) / c
+    smooth=1e-6
+    return xx, yy, (-d - a * xx - b * yy) / (c+smooth)
     
 def Get_Slope(roi, mu, sigma):
     """
@@ -54,8 +55,8 @@ def Get_Slope(roi, mu, sigma):
     """
 
     n = 100
-    max_iterations = 30
-    goal_inliers = n * 0.3
+    max_iterations = 10
+    goal_inliers = n * 0.1
 
     xyzs = np.zeros((64, 3))
 
@@ -76,7 +77,8 @@ def Get_Slope(roi, mu, sigma):
     # RANSAC
     m, best_inliers = run_ransac(xyzs, estimate, lambda x, y: is_inlier(x, y, 0.01), 3, goal_inliers, max_iterations)
     a, b, c, d = m
-    xx, yy, zz = plot_plane(a, b, c, d)
+    #描画
+    #xx, yy, zz = plot_plane(a, b, c, d)
 
     """
     ax.scatter3D(xyzs.T[0], xyzs.T[1], xyzs.T[2])
@@ -98,11 +100,21 @@ def Get_Slope(roi, mu, sigma):
 
     
 
-def Get_Roughness(cropped, m, x, y):
-    diff = []
+def Get_Roughness(cropped, m, x_ary, y_ary):
+
     a,b,c,d = m
     smooth = 1e-6
-    #print("cropped.shape",cropped.shape)
+    """
+    #print("cropped.shape",cropped.shape,type(cropped))
+    #print("x",x.shape)
+
+    z = x_ary*(-a/(c+smooth)) + y_ary*(-b/(c+smooth))+ (-d/(c+smooth))
+    #print("z",z.shape)
+    diff = cropped-z
+    #print("diff",diff.shape)
+    roughness = np.nanmax(diff) 
+    """
+    diff = []
     for x in range(F):
         for y in range(F):
             z = (-a/(c+smooth))*x + (-b/(c+smooth))*y + (-d/(c+smooth))
@@ -113,13 +125,16 @@ def Get_Roughness(cropped, m, x, y):
                 pass
             else:
                 diff.append(cropped[x][y]-z)
-    roughness = max(diff)   
+    
+    roughness = max(diff) 
     return roughness
 
+# Get_roughness内の計算用配列
+x_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
+y_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
 
-
-for file_num in range(430,7680):
-    original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem/model/'
+for file_num in range(0,7680):
+    #original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem/model/'
     add_path = 'model_'+str(file_num)+'.mat'
     file = os.path.join(original_DEM_path,add_path)
     print('READ_PATH:',file)
@@ -161,27 +176,28 @@ for file_num in range(430,7680):
                 ax2.imshow(DEM2)
                 ax3.imshow(cropped)
                 plt.show()
-                """
                 
+                """
                 suiheido, m = Get_Slope(cropped, mu, sigma)
 
                 if suiheido > S[row][col]: # ワーストケースを記録
                     S[row][col] = suiheido
-
+                
+                
                 # 画像外枠境界線で粗さの取得を禁止する
                 if row==F//2 or col==F//2:
                     heitando=0
                 elif row==height-(F//2)-1 or col==width-(F//2)-1:
                     heitando=0
                 else:
-                    heitando = Get_Roughness(cropped, m, row, col)   
+                    heitando = Get_Roughness(cropped, m, x_ary, y_ary)   
 
                 if heitando > R[row][col]:
                     R[row][col] = heitando
                 
 
     S = min_max(S)
-    R = min_max(R)
+    #R = min_max(R)
     #np.set_printoptions(threshold=np.inf)
     #print("S:",S)
     #print("R:",R)
@@ -196,11 +212,17 @@ for file_num in range(430,7680):
     ax3.set_title('roughness')
     ax3.imshow(R,cmap='jet')
     
+    '''
     Vthm = np.mean(S)
     Vths = np.mean(R)
+    S = S>1.5*Vthm # SLOPE
+    print("1.5*Vthm",1.5*Vthm)
+    R = R>1.5*Vths # ROUGHNESS
+    print("1.5*Vths",1.5*Vths)
+    '''
+    S = S>0.45
+    R = R>0.63
 
-    S = S>1.5*Vthm
-    R = R>1.0*Vths
     hazard = (S|R)
 
     save_path = new_dir_path + '/label_'+ str(file_num) + '.mat'
