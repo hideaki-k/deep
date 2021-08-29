@@ -10,15 +10,15 @@ from ransac import *
 from sklearn.preprocessing import MinMaxScaler
 import time
 
-new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)/hazard_label'
+new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_ver2/alhat_label'
 os.makedirs(new_dir_path, exist_ok=True)
-original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)/model/'
+original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_ver2/model/'
 file_mei = 11
-add_path_ = 'model_'+str(file_mei)+'.mat'
+add_path_ = 'observed_model_'+str(file_mei)+'.mat'
 read_path_ = os.path.join(original_DEM_path,add_path_)
 
 
-rei = scipy.io.loadmat(read_path_)['true_DEM']
+rei = scipy.io.loadmat(read_path_)['DEM']
 print(rei)
 height = rei.shape[0]
 width = rei.shape[1]
@@ -114,7 +114,7 @@ def Get_Roughness(cropped, m, x_ary, y_ary):
     #print("diff",diff.shape)
     roughness = np.nanmax(diff) 
     """
-    diff = []
+    diff = [0]
     for x in range(F):
         for y in range(F):
             z = (-a/(c+smooth))*x + (-b/(c+smooth))*y + (-d/(c+smooth))
@@ -133,15 +133,15 @@ def Get_Roughness(cropped, m, x_ary, y_ary):
 x_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
 y_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
 
-for file_num in range(0,7680):
+for file_num in range(7000,7680):
     #original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem/model/'
-    add_path = 'model_'+str(file_num)+'.mat'
+    add_path = 'observed_model_'+str(file_num)+'.mat'
     file = os.path.join(original_DEM_path,add_path)
     print('READ_PATH:',file)
     start = time.time()
 
 
-    DEM = scipy.io.loadmat(file)['true_DEM'] 
+    DEM = scipy.io.loadmat(file)['DEM'] 
     #print(DEM.dtype)
     DEM = np.array(DEM, dtype='float32')
     mu = np.mean(DEM)
