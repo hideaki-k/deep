@@ -2,22 +2,27 @@
 clear all
 close all
 clc
-pix = 128;
+pix = 64;
 angle = 0;
-folder_name = string(pix)+"pix_("+string(angle)+"deg)_dem";
+is_noise = true;
+is_boulder = false;
+if is_noise
+    folder_name = string(pix)+"pix_("+string(angle)+"deg)_dem(noisy)_ver2";
+else
+    folder_name = string(pix)+"pix_("+string(angle)+"deg)_dem_ver2";
+end
 mkdir(folder_name);
 mkdir(folder_name,'image');
 mkdir(folder_name,'label');
 mkdir(folder_name,'model');
-for i=0:1:0
-  % f = put_crater(i,0);
-   % f = make_scan_crater(i,0);
-  % f = make_scan_bolder_perlin(i,2);
-  % f =  make_crater(i,1)
-   f = base_DEM(i,2,pix,angle,folder_name)
-  % f = put_boulder_perlin(i,0)
+% 100:1:7680
+for i=7680:1:16640
+   f = fractal_terrain_generation(i,0,pix,angle,folder_name,is_noise,is_boulder);
+%   f = base_DEM(i,2,pix,angle,folder_name,is_noise);
 
-   %モード0:LOGデータ保存、モード1は動画生成、モード2：3次元プロット
+   % 引数　i:イテレーション, mode, pix:解像度, angle:斜度, folder_name:セーブディレクトリ,
+   % is_noise:パーリンノイズ付加の有無
+   % モード0:LOGデータ保存、モード1は動画生成、モード2：3次元プロット
 end
 
 function f = count(i)
