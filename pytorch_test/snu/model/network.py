@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torchvision
 from . import snu_layer
-from . import revised_snu_layer
+
 import numpy as np
 from torchsummary import summary
 import matplotlib.pyplot as plt
@@ -14,26 +14,27 @@ import matplotlib.pyplot as plt
 
 # Network definition]
 
-# 7/5~
-class Gated_CSNU_Net(torch.nn.Module):
-    def __init__(self, num_time=20, gpu=True, batch_size=128):
-        super(Gated_CSNU_Net, self).__init__()
+# 7/24~
+class revisedSNU_Network(torch.nn.Module):
+    def __init__(self, num_time=20, l_tau=0.8, soft=False, rec=False, forget=False, dual=False, gpu=True,
+                 batch_size=32):
+        super(revisedSNU_Network, self).__init__()
+
         
         self.num_time = num_time
         self.batch_size = batch_size
-        self.kernel_size = 3
-
- 
+        self.rec = rec
+        self.forget = forget
+        self.dual = dual
         # Encoder layers
-        self.l1 = revised_snu_layer.Gated_Conv_SNU(channelIn=1, channelOut=4, kernel_size=self.kernel_size, padding=2, gpu=gpu)
-
-        self.l2 = revised_snu_layer.Gated_Conv_SNU(channelIn=4, channelOut=4, kernel_size=self.kernel_size, padding=2, gpu=gpu)
+        self.l1 = snu_layer.Conv_SNU(in_channels=1, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, forget=self.forget, dual=self.dual, gpu=gpu)
+        self.l2 = snu_layer.Conv_SNU(in_channels=16, out_channels=4, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, forget=self.forget, dual=self.dual, gpu=gpu)
         
         # Decoder layers
-        self.l3 = revised_snu_layer.Gated_Conv_SNU(channelIn=4, channelOut=4, kernel_size=self.kernel_size, padding=2, gpu=gpu)
+        self.l3 = snu_layer.Conv_SNU(in_channels=4, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, forget=self.forget, dual=self.dual, gpu=gpu)
+        self.l4 = snu_layer.Conv_SNU(in_channels=16, out_channels=1, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, forget=self.forget, dual=self.dual, gpu=gpu)
         
-        self.l4 = revised_snu_layer.Gated_Conv_SNU(channelIn=4, channelOut=1, kernel_size=self.kernel_size, padding=2, gpu=gpu)
-       
+        self.up_samp = nn.Upsample(scale_factor=2, mode='nearest')
 
     def _reset_state(self):
         self.l1.reset_state()
@@ -64,42 +65,54 @@ class Gated_CSNU_Net(torch.nn.Module):
         
     def forward(self, x, y):
         loss = None
+        correct = 0
+        sum_out = None
         dtype = torch.float
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        out = torch.zeros((self.batch_size, 1, 64, 64), device=device, dtype=dtype)
+        out = torch.zeros((self.batch_size, 1, 128, 128), device=device, dtype=dtype)
         out_rec = [out]
         self._reset_state()
-        
-        
-        
+
         for t in range(self.num_time):
             x_t = x[:,:,t]  #torch.Size([256, 784])
-            x_t = x_t.reshape((len(x_t), 1, 64, 64))
+            x_t = x_t.reshape((len(x_t), 1, 128, 128))
             #print("x_t : ",x_t.shape)
             h1 = self.l1(x_t) # h1 :  torch.Size([256, 16, 64, 64])  
+            h1 = F.max_pool2d(h1, 2) #h1_ :  torch.Size([256, 16, 32, 32])
             h2 = self.l2(h1) #h2 :  torch.Size([256, 4, 32, 32])
+            h2 = F.max_pool2d(h2, 2)#h2 :  torch.Size([256, 16, 16, 16])
             h3 = self.l3(h2)
+            h3 = self.up_samp(h3)
             out = self.l4(h3) #out.shape torch.Size([256, 10]) # [バッチサイズ,output.shape]
+            out = self.up_samp(out)
             #print("out.shape",out.shape) #out[0].shape torch.Size([10])
             #print("sum out[0]:",sum(out[0]))  #tensor([1., 0., 1., 0., 1., 0., 1., 1., 0., 1.], device='cuda:0',
-            #sum_out = out if sum_out is None else sum_out + out
+            #sum_out = out if sum_out is Nonec else sum_out + out
             out_rec.append(out)
     
         out_rec = torch.stack(out_rec,dim=1)
         #print("out_rec.shape",out_rec.shape) #out_rec.shape torch.Size([128, 21, 1, 64, 64]) ([バッチ,時間,分類])
         #m,_=torch.sum(out_rec,1)
         m =torch.sum(out_rec,1) #m.shape: torch.Size([256, 10]) for classifiartion
+        #m = m/self.num_time
         # m : out_rec(21step)を時間軸で積算したもの
         # 出力mと教師信号yの形式を統一する
-        y = y.reshape(len(x_t), 1, 64, 64)
+        y = y.reshape(len(x_t), 1, 128, 128)
+        #m = torch.where(m>0,1,0).to(torch.float32)
+        #y = torch.where((y>0)&(y<2),self.num_time//2,0).to(torch.float32)
         y = torch.where(y>0,self.num_time,0).to(torch.float32)
         #criterion = nn.CrossEntropyLoss() #MNIST 
         criterion = nn.MSELoss() # semantic segmantation
         loss = criterion(m, y)
         
+        #metabolic_cost = self.gamma*torch.sum(m**3)
+        #print("MSE_loss : metabplic_cost = ",loss,metabolic_cost)
+        #loss += metabolic_cost
         iou,cnt= self.iou_score(m, y)
         
+
         return loss, m, out_rec, iou, cnt
+        
 
 # 7/5 ~
 class Fully_Connected_Gated_SNU_Net(torch.nn.Module):
@@ -264,7 +277,7 @@ class SNU_Network(torch.nn.Module):
             out = self.up_samp(out)
             #print("out.shape",out.shape) #out[0].shape torch.Size([10])
             #print("sum out[0]:",sum(out[0]))  #tensor([1., 0., 1., 0., 1., 0., 1., 1., 0., 1.], device='cuda:0',
-            #sum_out = out if sum_out is None else sum_out + out
+            #sum_out = out if sum_out is Nonec else sum_out + out
             out_rec.append(out)
     
         out_rec = torch.stack(out_rec,dim=1)
