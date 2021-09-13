@@ -63,19 +63,43 @@ class ConvAutoencoder(nn.Module):
                                kernel_size = 3,
                                padding = 1)
         #Decoder Layers
+        self.conv3  = nn.Conv2d(in_channels = 4,
+                               out_channels = 16,
+                               kernel_size = 3,
+                               padding = 1)
+
+        self.conv4  = nn.Conv2d(in_channels = 16,
+                        out_channels = 1,
+                        kernel_size = 3,
+                        padding = 1)   
+
         self.t_conv1 = nn.ConvTranspose2d(in_channels = 4, out_channels = 16,
                                           kernel_size = 2, stride = 2)
         self.t_conv2 = nn.ConvTranspose2d(in_channels = 16, out_channels = 1,
                                           kernel_size = 2, stride = 2)
+        self.elu = nn.ELU()                                 
         self.relu = nn.ReLU()
         self.pool = nn.MaxPool2d(2, 2)
         self.sigmoid = nn.Sigmoid()
+        self.up_samp = nn.Upsample(scale_factor=2,mode='nearest')
 
     def forward(self, x):
 
         x = x.squeeze(1)
         x = x.reshape((len(x), 1, 64, 64))
-        
+                
+        #encode#                           
+        x = self.elu(self.conv1(x))     
+        x = self.pool(x)                  
+        x = self.elu(self.conv2(x))      
+        x = self.pool(x)                  
+        #decode#
+        x = self.elu(self.conv3(x)) 
+        x = self.up_samp(x)   
+        x = self.elu(self.conv4(x))
+        x = self.up_samp(x)
+        return x
+        '''
         #encode#                           
         x = self.relu(self.conv1(x))     
         x = self.pool(x)                  
@@ -85,7 +109,7 @@ class ConvAutoencoder(nn.Module):
         x = self.relu(self.t_conv1(x))    
         x = self.sigmoid(self.t_conv2(x))
         return x
-
+        '''
 def iou_score(outputs, labels):
     smooth = 1e-6
     outputs = outputs.data.cpu().numpy() #outputs.shape: (128, 1, 64, 64)
