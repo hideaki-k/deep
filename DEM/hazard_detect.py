@@ -10,11 +10,11 @@ from ransac import *
 from sklearn.preprocessing import MinMaxScaler
 import time
 #
-new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(5deg)_dem(noisy)/alhat_label'
-#new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_ver2/alhat_label'
+#new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(5deg)_dem(noisy)/alhat_label'
+new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_ver2/alhat_label'
 os.makedirs(new_dir_path, exist_ok=True)
-original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(5deg)_dem(noisy)/model/'
-#original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_ver2/model/'
+#original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(5deg)_dem(noisy)/model/'
+original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_ver2/model/'
 file_mei = 11
 observed = 0
 if observed:
@@ -164,7 +164,7 @@ def Get_Roughness(cropped, m, x_ary, y_ary):
 x_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
 y_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
 
-for file_num in range(0,7680):
+for file_num in range(14000,17000):
 
     if observed:
         add_path_ = 'observed_model_'+str(file_num)+'.mat'
@@ -263,7 +263,7 @@ for file_num in range(0,7680):
     #print("max S",np.max(S))
     #print("max R",np.max(R))
     S = S>0.98
-    R = R>0.94
+    R = R>1.2
 
     hazard = (S|R)
 
