@@ -99,6 +99,12 @@ def heatmap(x,kyorigazou,num_time=20,data_id=2,label_img=None): # 画像を時�
     plt.savefig(str(new_dir_path)+"/heatmap_image.png")
     print("save heat")
 
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.imshow(kyorigazou)
+    plt.savefig(str(new_dir_path)+"/kyorigazou.png")
+    print("save heat")
+
     # visualize IoU
     label_img = label_img[data_id].reshape(64,64)
     
