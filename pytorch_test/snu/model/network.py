@@ -206,7 +206,7 @@ class Fully_Connected_Gated_SNU_Net(torch.nn.Module):
 
 # 改(7/6~) 
 class SNU_Network(torch.nn.Module):
-    def __init__(self, num_time=20, l_tau=0.8, soft=False, rec=False, forget=False, dual=False, gpu=True,
+    def __init__(self, num_time=20, l_tau=0.8, soft=False, rec=False, forget=False, dual=False, power=False, gpu=True,
                  batch_size=32):
         super(SNU_Network, self).__init__()
 
@@ -216,6 +216,7 @@ class SNU_Network(torch.nn.Module):
         self.rec = rec
         self.forget = forget
         self.dual = dual
+        self.power = power
         # Encoder layers
         self.l1 = snu_layer.Conv_SNU(in_channels=1, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, forget=self.forget, dual=self.dual, gpu=gpu)
         self.l2 = snu_layer.Conv_SNU(in_channels=16, out_channels=4, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, forget=self.forget, dual=self.dual, gpu=gpu)
@@ -262,11 +263,16 @@ class SNU_Network(torch.nn.Module):
         out = torch.zeros((self.batch_size, 1, 64, 64), device=device, dtype=dtype)
         out_rec = [out]
         self._reset_state()
+        ht_spike_count = 0
+        h1_spike_count = 0
+        h2_spke_count = 0
+        h3_spike_count = 0
+        out_spike_count = 0
 
         for t in range(self.num_time):
             x_t = x[:,:,t]  #torch.Size([256, 784])
             x_t = x_t.reshape((len(x_t), 1, 64, 64))
-            #print("x_t : ",x_t.shape)
+            
             h1 = self.l1(x_t) # h1 :  torch.Size([256, 16, 64, 64])  
             h1 = F.max_pool2d(h1, 2) #h1_ :  torch.Size([256, 16, 32, 32])
             h2 = self.l2(h1) #h2 :  torch.Size([256, 4, 32, 32])
