@@ -204,10 +204,10 @@ class Fully_Connected_Gated_SNU_Net(torch.nn.Module):
         out_rec =out_rec.reshape(128,21,64,64)
         return loss, m, out_rec, iou, cnt
 
-# 改(7/6~) 
+# 改(7/6~) NC_KEN 
 class SNU_Network(torch.nn.Module):
     def __init__(self, num_time=20, l_tau=0.8, soft=False, rec=False, forget=False, dual=False, power=False, gpu=True,
-                 batch_size=32):
+                 batch_size=128):
         super(SNU_Network, self).__init__()
 
         
@@ -217,6 +217,7 @@ class SNU_Network(torch.nn.Module):
         self.forget = forget
         self.dual = dual
         self.power = power
+
         # Encoder layers
         self.l1 = snu_layer.Conv_SNU(in_channels=1, out_channels=16, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, forget=self.forget, dual=self.dual, gpu=gpu)
         self.l2 = snu_layer.Conv_SNU(in_channels=16, out_channels=4, kernel_size=3, padding=1, l_tau=l_tau, soft=soft, rec=self.rec, forget=self.forget, dual=self.dual, gpu=gpu)
@@ -262,30 +263,50 @@ class SNU_Network(torch.nn.Module):
         device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         out = torch.zeros((self.batch_size, 1, 64, 64), device=device, dtype=dtype)
         out_rec = [out]
+        #print('out shape',out.shape)
         self._reset_state()
         ht_spike_count = 0
         h1_spike_count = 0
-        h2_spke_count = 0
+        h2_spike_count = 0
         h3_spike_count = 0
         out_spike_count = 0
 
         for t in range(self.num_time):
             x_t = x[:,:,t]  #torch.Size([256, 784])
             x_t = x_t.reshape((len(x_t), 1, 64, 64))
-            
+            #print('x_t',x_t.shape)
+            #print('x_t.sum',torch.sum(x_t))
+
             h1 = self.l1(x_t) # h1 :  torch.Size([256, 16, 64, 64])  
-            h1 = F.max_pool2d(h1, 2) #h1_ :  torch.Size([256, 16, 32, 32])
-            h2 = self.l2(h1) #h2 :  torch.Size([256, 4, 32, 32])
-            h2 = F.max_pool2d(h2, 2)#h2 :  torch.Size([256, 16, 16, 16])
-            h3 = self.l3(h2)
-            h3 = self.up_samp(h3)
-            out = self.l4(h3) #out.shape torch.Size([256, 10]) # [バッチサイズ,output.shape]
-            out = self.up_samp(out)
-            #print("out.shape",out.shape) #out[0].shape torch.Size([10])
-            #print("sum out[0]:",sum(out[0]))  #tensor([1., 0., 1., 0., 1., 0., 1., 1., 0., 1.], device='cuda:0',
-            #sum_out = out if sum_out is Nonec else sum_out + out
-            out_rec.append(out)
-    
+
+            h1_ = F.max_pool2d(h1, 2) #h1_ :  torch.Size([256, 16, 32, 32])
+            h2 = self.l2(h1_) #h2 :  torch.Size([256, 4, 32, 32])
+
+            h2_ = F.max_pool2d(h2, 2)#h2 :  torch.Size([256, 16, 16, 16])
+            h3 = self.l3(h2_)
+
+            h3_ = self.up_samp(h3)
+            out = self.l4(h3_) #out.shape torch.Size([256, 10]) # [バッチサイズ,output.shape]
+
+            out_ = self.up_samp(out)
+            out_rec.append(out_)
+
+            if self.power:
+                ht_spike_count += torch.sum(x_t)
+                #print('torch.sum(x_t)',torch.sum(x_t))
+                #print('ht_spike_count',ht_spike_count)
+                #print('h1:',h1.shape)
+                h1_spike_count += torch.sum(h1)
+                #print('h2:',h2.shape)
+                h2_spike_count += torch.sum(h2)
+                #print('h3:',h3.shape)
+                h3_spike_count += torch.sum(h3)
+                #print('out:',out.shape)
+                out_spike_count += torch.sum(out)
+        
+        total_spike_count = [ht_spike_count,h1_spike_count,h2_spike_count,h3_spike_count,out_spike_count]
+                #print('total_spike_count shape : ',total_spike_count.shape)
+
         out_rec = torch.stack(out_rec,dim=1)
         #print("out_rec.shape",out_rec.shape) #out_rec.shape torch.Size([128, 21, 1, 64, 64]) ([バッチ,時間,分類])
         #m,_=torch.sum(out_rec,1)
@@ -305,9 +326,10 @@ class SNU_Network(torch.nn.Module):
         #print("MSE_loss : metabplic_cost = ",loss,metabolic_cost)
         #loss += metabolic_cost
         iou,cnt= self.iou_score(m, y)
-        
-
-        return loss, m, out_rec, iou, cnt
+        if self.power:
+            return loss, m, out_rec, iou, cnt, total_spike_count
+        else:
+            return loss, m, out_rec, iou, cnt
         
 class SNU_Network_classification(torch.nn.Module):
     def __init__(self, n_in=784, n_mid=256, n_out=10,
