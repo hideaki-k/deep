@@ -229,6 +229,9 @@ class Conv_SNU(nn.Module):
             i = torch.sigmoid(self.Wi(x) + self.Ri(self.y))
             f = torch.sigmoid(self.Wf(x) + self.Rf(self.y))
             s = F.elu(abs(self.Wx(x)) + i*self.Wy(self.y) + (self.l_tau-f) * self.s * (1-self.y))
+            #print('i',i.shape)
+            #print('f',f.shape)
+            #print('s',s.shape)
         else:
             #print("rec Noooooo")
             s = F.elu(abs(self.Wx(x)) + self.l_tau * self.s * (1-self.y))
