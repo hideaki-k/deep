@@ -21,13 +21,13 @@ print("mkdir !")
 
 OUT_FILE_NAME_ = str(new_dir_path)+"/inputs_output_video.mp4"
 #OUT_FILE_NAME = "output_video.avi"
-def mk_txt(model_name):
+def mk_txt(model_name,iou):
     model_name = model_name.replace('models/','')
     model_name = model_name.replace('/','__')
     model_name = model_name.replace('.pth','')
     path = str(new_dir_path)+"/"+str(model_name)+'.txt'
     f = open(path,'w')
-    f.write(model_name)
+    f.write(iou)
     f.close()
 
 def rectangle_record(x,num_time=20,data_id=2):
@@ -78,7 +78,7 @@ def record(x,num_time=20,data_id=2): # x : output
     ani.save(str(new_dir_path)+"/outputs.gif", writer="pillow", fps=10)
     #plt.show()
 
-def heatmap(x,kyorigazou,num_time=20,data_id=2,label_img=None): # 画像を時間軸方向に積算してヒートマップに
+def heatmap(x,kyorigazou,num_time=20,data_id=2,label_img=None, iou=0): # 画像を時間軸方向に積算してヒートマップに
     print("x",x.shape)
     x = x[data_id].squeeze(1)
     kyorigazou = kyorigazou[data_id]
@@ -89,7 +89,7 @@ def heatmap(x,kyorigazou,num_time=20,data_id=2,label_img=None): # 画像を時�
     fig = plt.figure()
     ax = fig.add_subplot(111)
     #H = ax.hist2d(sum_x[0],sum_x[1],bins=40,cmap=cm.jet)
-    ax.set_title('heat map')
+    ax.set_title('heat map,iou is{}'.format((iou)))
     ax.set_xlabel('x')
     ax.set_ylabel('y')
     
