@@ -1,10 +1,11 @@
 % mode  0:保存 1:ビデオ保存 2:三次元プロット 
-addpath 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_ver2\model'
-folder_name = 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_ver2';
+addpath 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate\model'
+folder_name = 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate';
 mode = 0;
 size_factor = 64;
+num_time = 70
 % real_modelファイルの読み込み
-for i=0:1:16400
+for i=0:1:16640
     i
     % file読み込み
     file_path = append('real_model_',string(i),'.mat');
