@@ -10,14 +10,16 @@ from ransac import *
 from sklearn.preprocessing import MinMaxScaler
 import time
 #
-new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(5deg)_dem(noisy)/simple_label'
+#new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0-5deg)_dem(noisy)/simple_label'
 #new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_ver2/alhat_label'
 #new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_ver2/simple_label'
+new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate/simple_label'
 os.makedirs(new_dir_path, exist_ok=True)
-original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(5deg)_dem(noisy)/model/'
+#original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0-5deg)_dem(noisy)/model/'
 #original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_ver2/model/'
 #original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0-5deg)_dem(noisy)/model/'
 #original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(deg)_dem(noisy)_ver2/model/'
+original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate/model/'
 file_mei = 11
 observed = 0
 if observed:
@@ -182,7 +184,7 @@ def Get_Roughness(cropped):
 #x_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
 #y_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
 
-for file_num in range(6000):
+for file_num in range(512,18000):
 
     if observed:
         add_path_ = 'observed_model_'+str(file_num)+'.mat'
