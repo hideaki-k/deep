@@ -18,9 +18,11 @@ evaluate_angle = 0;
 
 % 0deg,5deg“¯‚¶’nŒ`‚ÉŒXŽÎŠp“ñ‚Â
 is_double_terrain = true;
-
-if is_evaluate %è©•ä¾¡ç”¨
+if is_double_terrain
     folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate_1124";
+
+elseif is_evaluate %è©•ä¾¡ç”¨
+    folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate";
 
 
 elseif is_noise
