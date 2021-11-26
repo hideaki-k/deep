@@ -16,7 +16,6 @@ function DEM = put_hazard(base,is_noise,noise_val, center_of_x, center_of_y,R, i
         noise_val = 0;
     end
 
-    
    %% 障害物付与
     for i =  1:1:size_factor(1)
         for j = 1:1:size_factor(2)
@@ -25,7 +24,6 @@ function DEM = put_hazard(base,is_noise,noise_val, center_of_x, center_of_y,R, i
                     y = center_of_y(ind);
                     r = sqrt(abs(i-x)^2 + abs(j-y)^2);
                     h = base(i,j);
-                    
                     H_ro = 0.036*(2*R(ind))^1.014;
                     H_r = H_ro;
                     H_c = 0.196*(2*R(ind))^1.010 - H_ro ;

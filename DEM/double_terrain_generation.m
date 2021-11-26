@@ -111,7 +111,7 @@ function f = double_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is_
         lidar_data = zeros(size_factor,size_factor);
     end
     if mode == 0
-         % 0deg
+        % 0deg
         mkdir(folder_name,'/0deg');
         folder_name =folder_name+"0deg";
         filenum = string(k);
@@ -166,7 +166,6 @@ function f = double_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is_
     end
     %% 教師�?ータとして保�?
     if mode == 0
-
         % 5deg
         mkdir(folder_name,'5deg');
         folder_name =folder_name+"/5deg";
