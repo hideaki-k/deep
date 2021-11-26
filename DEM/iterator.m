@@ -10,13 +10,17 @@ is_noise = true;
 is_boulder = false;
 
 addpath(' C:\Users\aki\Documents\GitHub\deep\DEM\terrain_generation');
-%10/25 NC研　評価用データセット
-% 斜度、ノイズ、クレータ数、クレータ半径を指定可能
+addpath(' C:\Users\hp731\Documents\GitHub\deep\DEM\terrain_generation');
+%10/25 NC研�??評価用�?ータセ�?�?
+% 斜度、ノイズ、クレータ数、クレータ半�?を指定可能
 is_evaluate = true;
 evaluate_angle = 0;
 
+% 0deg,5deg�����n�`�ɌX�Ίp���
+is_double_terrain = true;
+
 if is_evaluate %評価用
-    folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate";
+    folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate_1124";
 
 
 elseif is_noise
@@ -24,7 +28,7 @@ elseif is_noise
     %folder_name = string(pix)+"pix_("+string(angle)+"deg)_dem(noisy)"; % 9/5
     if is_mixangle; %アングル混在
         folder_name = string(pix)+"pix_(0-"+string(max_angle)+"deg)_dem(noisy)"; % 9/13
-    else %アングル固定
+    else %アングル固�?
         folder_name = string(pix)+"pix_(0-"+string(angle)+"deg)_dem(noisy)";
     end
 else
@@ -35,13 +39,17 @@ mkdir(folder_name,'image')
 mkdir(folder_name,'label');
 mkdir(folder_name,'model');
 % 7680:1:16640
-for i=512:1:640
-   if is_evaluate
-       evaluate_terrain_generation(i,2,pix,evaluate_angle,folder_name,is_noise,is_boulder);
+for i=0:1:128
+   if is_double_terrain
+       evaluate_angle=5
+        double_terrain_generation(i,0,pix,evaluate_angle,folder_name,is_noise,is_boulder);
+    
+   elseif is_evaluate
+       evaluate_terrain_generation(i,0,pix,evaluate_angle,folder_name,is_noise,is_boulder);
     
     
    elseif is_mixangle
-       angle = round((max_angle)*rand(1)) % スロープ角(1~5)
+       angle = round((max_angle)*rand(1)) % スロープ�?(1~5)
        f = fractal_terrain_generation(i,0,pix,angle,folder_name,is_noise,is_boulder);
        
    else
@@ -50,9 +58,9 @@ for i=512:1:640
   
 %   f = base_DEM(i,2,pix,angle,folder_name,is_noise);
 
-   % 引数　i:イテレーション, mode, pix:解像度, angle:斜度, folder_name:セーブディレクトリ,
-   % is_noise:パーリンノイズ付加の有無
-   % モード0:LOGデータ保存、モード1は動画生成、モード2：3次元プロット
+   % 引数�?i:イ�?レーション, mode, pix:解像度, angle:斜度, folder_name:セーブディレクトリ,
+   % is_noise:パ�?�リンノイズ付加の有無
+   % モー�?0:LOG�?ータ保存�?�モー�?1は動画生�?��?�モー�?2?�?3次�?プロ�?�?
 end
 
 function f = count(i)
