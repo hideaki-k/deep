@@ -149,7 +149,7 @@ function f = double_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is_
 
         time = time+1;
         lidar_data(DEM==i)=1;
-        time_data_5(:,:,time) = lidar_data;
+        time_data(:,:,time) = lidar_data;
         if mode == 1
             imagesc(lidar_data);
             colorbar;
