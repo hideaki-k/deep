@@ -1,4 +1,4 @@
-function DEM = put_hazard(base,is_noise,noise_val, center_of_x, center_of_y,R, is_boulder, boulder_center_x_list, boulder_center_y_list, boulder_xziku_list, boulder_yziku_list, boulder_zziku_list)
+function DEM = put_hazard(base,is_noise, center_of_x, center_of_y,R, is_boulder, boulder_center_x_list, boulder_center_y_list, boulder_xziku_list, boulder_yziku_list, boulder_zziku_list)
     
     size_factor = size(base);
     DEM = zeros(size_factor);
@@ -10,12 +10,15 @@ function DEM = put_hazard(base,is_noise,noise_val, center_of_x, center_of_y,R, i
     f = @(t) myinterpolation(t);
     H = perlin_2d(f, 1, X, Y);
     size(H);
-
+    noise_min = 0;
+    noise_max = 0.8;
+    noise_val = (noise_max-noise_min).*rand(1)+noise_min;
     else
         H = zeros(size_factor);
         noise_val = 0;
     end
 
+    
    %% 障害物付与
     for i =  1:1:size_factor(1)
         for j = 1:1:size_factor(2)
@@ -24,6 +27,7 @@ function DEM = put_hazard(base,is_noise,noise_val, center_of_x, center_of_y,R, i
                     y = center_of_y(ind);
                     r = sqrt(abs(i-x)^2 + abs(j-y)^2);
                     h = base(i,j);
+                    
                     H_ro = 0.036*(2*R(ind))^1.014;
                     H_r = H_ro;
                     H_c = 0.196*(2*R(ind))^1.010 - H_ro ;

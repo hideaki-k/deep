@@ -11,18 +11,20 @@ is_boulder = false;
 
 addpath(' C:\Users\aki\Documents\GitHub\deep\DEM\terrain_generation');
 addpath(' C:\Users\hp731\Documents\GitHub\deep\DEM\terrain_generation');
-%10/25 NC研�??評価用�?ータセ�?�?
-% 斜度、ノイズ、クレータ数、クレータ半�?を指定可能
+
+
 is_evaluate = true;
 evaluate_angle = 0;
 
 % 0deg,5deg�����n�`�ɌX�Ίp���
 is_double_terrain = true;
+
 if is_double_terrain
     folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate_1124";
-
+    
 elseif is_evaluate %評価用
     folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate";
+
 
 elseif is_noise
     %folder_name = string(pix)+"pix_("+string(angle)+"deg)_dem(noisy)_ver2";
@@ -43,10 +45,11 @@ mkdir(folder_name,'model');
 for i=0:1:128
    if is_double_terrain
        evaluate_angle=5
-       double_terrain_generation(i,0,pix,evaluate_angle,folder_name,is_noise,is_boulder);
+        double_terrain_generation(i,0,pix,evaluate_angle,folder_name,is_noise,is_boulder);
     
    elseif is_evaluate
        evaluate_terrain_generation(i,0,pix,evaluate_angle,folder_name,is_noise,is_boulder);
+    
     
    elseif is_mixangle
        angle = round((max_angle)*rand(1)) % スロープ�?(1~5)
