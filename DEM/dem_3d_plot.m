@@ -1,6 +1,6 @@
 clear
 close all
-filename = 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(5deg)_dem(noisy)\model\real_model_16611.mat'
+filename = 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-5deg)_dem(noisy)_evaluate_1124\5deg\model\observed_model_1.mat'
 DEM = load(filename,'true_DEM');
 DEM = DEM.true_DEM;
 
