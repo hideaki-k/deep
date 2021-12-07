@@ -1,4 +1,4 @@
-function DEM = put_hazard(base,is_noise,noise_val, center_of_x, center_of_y,R, is_boulder, boulder_center_x_list, boulder_center_y_list, boulder_xziku_list, boulder_yziku_list, boulder_zziku_list)
+function DEM = put_hazard(base,is_noise, center_of_x, center_of_y,R, is_boulder, boulder_center_x_list, boulder_center_y_list, boulder_xziku_list, boulder_yziku_list, boulder_zziku_list)
     
     size_factor = size(base);
     DEM = zeros(size_factor);
@@ -10,7 +10,9 @@ function DEM = put_hazard(base,is_noise,noise_val, center_of_x, center_of_y,R, i
     f = @(t) myinterpolation(t);
     H = perlin_2d(f, 1, X, Y);
     size(H);
-
+    noise_min = 0;
+    noise_max = 0.8;
+    noise_val = (noise_max-noise_min).*rand(1)+noise_min;
     else
         H = zeros(size_factor);
         noise_val = 0;

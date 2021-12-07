@@ -1,14 +1,12 @@
 function f = double_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is_boulder)
     f = mode;
-
-%% 斜面 & フラクタルの付�?
     size_factor = pix;
     time_scale = 20;
     base_0 = zeros(size_factor,size_factor);
     base = zeros(size_factor,size_factor);
     label_data = zeros(size_factor,size_factor);
-    time_data_0 = zeros(size_factor,size_factor,time_scale);
-    time_data_5 = zeros(size_factor,size_factor,time_scale);
+    time_data = zeros(size_factor,size_factor,time_scale);
+
     
     direct = round(rand(1),0);
     up_down= round(rand(1),0);
@@ -29,38 +27,35 @@ function f = double_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is_
         end
     end
 
-   %% クレータの個数 & 座標を決�?
-   crater_num = round(1 + (1 + 6)*rand(1)); % クレータ個数(1~6)
-   center_x_list = zeros(crater_num,1); %�?クレータ中�?座標_x
-   center_y_list = zeros(crater_num,1); % クレータ中�?座標_y
+   crater_num = round(1 + (1 + 6)*rand(1)); 
+   center_x_list = zeros(crater_num,1); 
+   center_y_list = zeros(crater_num,1); %
    
    alpha = [];
    R = zeros(crater_num,1);
 
    for crater = 1:1:crater_num
-       R(crater) = 3 + (-3 + 15)*rand(1); %クレータ半�?(3~10)
+       R(crater) = 3 + (-3 + 15)*rand(1); 
        x_cord = 3 + (3 + 64)*rand(1);
        y_cord = 3 + (3 + 64)*rand(1);
        center_x_list(crater) = round(x_cord);
        center_y_list(crater) = round(y_cord);
    end
-   %% ボル�?ーの個数 & 座標を決�?
+   %% �{���_�[
 
-    boulder_num = round(5*rand(1)); % ボル�?ー個数(0~5)
-    boulder_center_x_list =  zeros(boulder_num,1); % ボル�?ー中�?座標x
-    boulder_center_y_list = zeros(boulder_num,1); % ボル�?ー中�?座標y
-    boulder_xziku_list = zeros(boulder_num,1); % ボル�?ーx軸長�?
-    boulder_yziku_list = zeros(boulder_num,1); % ボル�?ーy軸長�?
-    boulder_zziku_list = zeros(boulder_num,1); % ボル�?ーz軸長�?
+    boulder_num = round(5*rand(1)); 
+    boulder_center_x_list =  zeros(boulder_num,1); 
+    boulder_center_y_list = zeros(boulder_num,1); 
+    boulder_xziku_list = zeros(boulder_num,1);
+    boulder_yziku_list = zeros(boulder_num,1); 
+    boulder_zziku_list = zeros(boulder_num,1); 
    
    if is_boulder
    for boulder = 1:1:boulder_num
-       % 座�?
        x_cord = 3 + (3 + 64)*rand(1);
        y_cord = 3 + (3 + 64)*rand(1);
        boulder_center_x_list(boulder) = round(x_cord);
        boulder_center_y_list(boulder) = round(y_cord);
-       % 大きさ
        xr = abs(5*rand(1));
        yr = abs(5*rand(1));
        zr = 3+abs(1*rand(1));
@@ -76,7 +71,7 @@ function f = double_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is_
     true_DEM = DEM_0;    
     DEM = round(DEM_0,0);
 
-   %% 三次�?プロ�?�?
+   %% ����
     if mode==2
         figure(1)
         s = surf(DEM);
@@ -99,7 +94,7 @@ function f = double_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is_
 
         time = time+1;
         lidar_data(DEM==i)=1;
-        time_data_0(:,:,time) = lidar_data;
+        time_data(:,:,time) = lidar_data;
         if mode == 1
             imagesc(lidar_data);
             colorbar;
@@ -111,32 +106,31 @@ function f = double_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is_
         lidar_data = zeros(size_factor,size_factor);
     end
     if mode == 0
-         % 0deg
+        % 0deg
         mkdir(folder_name,'/0deg');
-        folder_name =folder_name+"0deg";
+        curr_folder_name =folder_name+"/0deg";
+        mkdir(curr_folder_name,'image')
+        mkdir(curr_folder_name,'label');
+        mkdir(curr_folder_name,'model');
         filenum = string(k);
-        % true_DEM.mat hazard_label評価用
-        filename = folder_name+"/model/real_model_"+filenum;
+
+        filename = curr_folder_name+"/model/real_model_"+filenum;
         save(filename,'true_DEM');
         
-        % observed_DEM.mat hazard_label評価用 8/29追�?
-        filename = folder_name+"/model/observed_model_"+filenum;
+        filename = curr_folder_name+"/model/observed_model_"+filenum;
         save(filename,'DEM');
         
-        % model_png 見た目で評価?��丸め�?�なしとあり?�?
         kyorigazou = mat2gray(true_DEM);
-        filename = folder_name+"/model/model_true_"+filenum+'.png';
+        filename = curr_folder_name+"/model/model_true_"+filenum+'.png';
         imwrite(kyorigazou,filename);
         kyorigazou = mat2gray(DEM);
-        filename = folder_name+"/model/model_"+filenum+'.png';
+        filename = curr_folder_name+"/model/model_"+filenum+'.png';
         imwrite(kyorigazou,filename);
         
-        % label_data.mat crater中�?を塗りつぶした
-        filename = folder_name+"/label/label_"+filenum;
+        filename = curr_folder_name+"/label/label_"+filenum;
         save(filename,'label_data');
      
-        % time_data lidar再現�?ータ
-        filename = folder_name+"/image/image_"+filenum
+        filename = curr_folder_name+"/image/image_"+filenum
         save(filename,'time_data');
             
     end
@@ -146,14 +140,16 @@ function f = double_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is_
     
     time = 0;
     lidar_data = zeros(size_factor,size_factor);
-
+    label_data = zeros(size_factor,size_factor);
+    time_data = zeros(size_factor,size_factor,time_scale);
+    
     max_elevation_5 = max(DEM(:));
     min_elevation = max_elevation_5-20;
     for i = max_elevation_5:-1:min_elevation
 
         time = time+1;
         lidar_data(DEM==i)=1;
-        time_data_5(:,:,time) = lidar_data;
+        time_data(:,:,time) = lidar_data;
         if mode == 1
             imagesc(lidar_data);
             colorbar;
@@ -164,34 +160,33 @@ function f = double_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is_
         end
         lidar_data = zeros(size_factor,size_factor);
     end
-    %% 教師�?ータとして保�?
-    if mode == 0
 
+    if mode == 0
         % 5deg
         mkdir(folder_name,'5deg');
-        folder_name =folder_name+"/5deg";
+        curr_folder_name =folder_name+"/5deg";
+        mkdir(curr_folder_name,'image')
+        mkdir(curr_folder_name,'label');
+        mkdir(curr_folder_name,'model');
         filenum = string(k);
-        % true_DEM.mat hazard_label評価用
-        filename = folder_name+"/model/real_model_"+filenum;
+
+        filename = curr_folder_name+"/model/real_model_"+filenum;
         save(filename,'true_DEM');
         
-        % observed_DEM.mat hazard_label評価用 8/29追�?
-        filename = folder_name+"/model/observed_model_"+filenum;
+        filename = curr_folder_name+"/model/observed_model_"+filenum;
         save(filename,'DEM');
         
-        % model_png 見た目で評価?��丸め�?�なしとあり?�?
-        kyorigazou = mat2gray(true_DEM_5);
-        filename = folder_name+"/model/model_true_"+filenum+'.png';
+        kyorigazou = mat2gray(true_DEM);
+        filename = curr_folder_name+"/model/model_true_"+filenum+'.png';
         imwrite(kyorigazou,filename);
         kyorigazou = mat2gray(DEM);
-        filename = folder_name+"/model/model_"+filenum+'.png';
+        filename = curr_folder_name+"/model/model_"+filenum+'.png';
         imwrite(kyorigazou,filename);
-        
-        % label_data.mat crater中�?を塗りつぶした
-        filename = folder_name+"/label/label_"+filenum;
+
+        filename = curr_folder_name+"/label/label_"+filenum;
         save(filename,'label_data');
      
-        % time_data lidar再現�?ータ
-        filename = folder_name+"/image/image_"+filenum
+
+        filename = curr_folder_name+"/image/image_"+filenum
         save(filename,'time_data');
     end
