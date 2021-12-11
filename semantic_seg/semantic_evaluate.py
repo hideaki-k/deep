@@ -22,8 +22,8 @@ import cv2
 from sklearn.metrics import roc_curve, auc
 
 class LoadDataset(torch.utils.data.Dataset):
-    def __init__(self, csv_file):
-       
+    def __init__(self, csv_file, num_time):
+        self.num_time = num_time
         self.df = pd.read_csv(csv_file)
         #self.data_transform = data_transform
 
@@ -40,7 +40,7 @@ class LoadDataset(torch.utils.data.Dataset):
         label = label['label_data']
         #print("image : ",image.shape)
         #print("label : ",label.shape)
-        image = image.reshape(4096,20)
+        image = image.reshape(4096,self.num_time)
         #print("image : ",image.shape)
         image = image.astype(np.float32)
         #label = label.astype(np.int64)
@@ -48,7 +48,7 @@ class LoadDataset(torch.utils.data.Dataset):
         label = label.reshape(4096)
         label = label.astype(np.float32)
         return image, label, kyorigazou, name
-def cal_average_iou(outputs, labels):
+def cal_average_iou(outputs, labels, num_time, batch_size):
 
     outputs = outputs.data.cpu().numpy() #outputs.shape: (128, 1, 64, 64)
     labels = labels.data.cpu().numpy() 
@@ -57,12 +57,12 @@ def cal_average_iou(outputs, labels):
     average_iou = 0
     average_recall = 0
     average_F = 0
-    for i in range(30):
+    for i in range(batch_size):
         iou_list = []
         precision_list = []
         recall_list = []
         F_list = []
-        for j in range(0,20,1):
+        for j in range(0,num_time,1):
             output = np.where(outputs[i]>j,1,0)
             label = np.where(labels[i]>0,1,0)
             intersection = (np.uint64(output) & np.uint64(label)).sum((0,1)) # will be zero if Trueth=0 or Prediction=0
@@ -87,12 +87,12 @@ def cal_average_iou(outputs, labels):
         ind = iou_list.index(ind_iou)
         average_recall += recall_list[ind]
         average_F += F_list[ind]
-    print('average_iou is : ',average_iou/30) 
-    print('average_recall is ',average_recall/30) 
-    print('average_F is : ',average_F/30)
-    return average_iou/30
+    print('average_iou is : ',average_iou/batch_size) 
+    print('average_recall is ',average_recall/batch_size) 
+    print('average_F is : ',average_F/batch_size)
+    return average_iou/batch_size
 
-def iou_score(outputs, labels, data_id):
+def iou_score(outputs, labels, data_id, num_time):
     smooth = 1e-6
 
     outputs = outputs.data.cpu().numpy() #outputs.shape: (128, 1, 64, 64)
@@ -110,7 +110,7 @@ def iou_score(outputs, labels, data_id):
     cnt = []
     F_list = []
     
-    for j in range(0,20,1):
+    for j in range(0,num_time,1):
         # TP = intersection
         # TP + FN = label
         # TP + FP = output
@@ -167,7 +167,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # 全結合　畳み込みリカレントSNN
 #model = network.Gated_CSNU_Net()
-model = network.SNU_Network(rec=args.rec, forget=args.forget, dual=args.dual, power=args.power, batch_size=args.batch)
+model = network.SNU_Network(num_time=args.time, rec=args.rec, forget=args.forget, dual=args.dual, power=args.power, batch_size=args.batch)
 model = model.to(device)
 model.eval()
 print(model.state_dict().keys())
@@ -176,21 +176,24 @@ print(model.state_dict().keys())
 #model_path = "models/InputGated_recursive_tof(16deg)/models_state_dict_end.pth" 
 #model_path = "models/dualGated_recurrent_tof(16deg)/models_state_dict_end.pth" # -d
 model_path = "models/ists/0-5deg_rSNU/models_state_dict_end.pth"
+#model_path = "models/ists/0deg_rSNU/models_state_dict_end.pth"
 model.load_state_dict(torch.load(model_path))
 print("load model")
 #summary(model)
 
 ####　必ず確認！
-data_id = 3
-num_time = 20
+data_id = 2
+num_time = args.time
 
 # test_img : 評価用画像生成
 # inputs_, label_ = test_img() 
 #valid_dataset = LoadDataset("semantic_eval_loc.csv")
-valid_dataset = LoadDataset("evaluate_variety_dem_loc.csv")
+valid_dataset = LoadDataset("evaluate_variety_dem_loc.csv", num_time)
 valid_iter = DataLoader(valid_dataset, batch_size=args.batch, shuffle=False)
 for i,(inputs, labels, kyorigazou, name) in enumerate(valid_iter, 0):
-    if i==18: #1-4 5-8 9-12 13-16 17-20
+   #1-4 5-8 9-12 13-16 17-20(batch=32)
+   #1-16 17-33 34-50 51-67 68-84(batch=8)
+    if i== 5: 
         break
     else:
         print('======i=======',i)
@@ -215,8 +218,8 @@ for i,(inputs, labels, kyorigazou, name) in enumerate(valid_iter, 0):
 #for data_id in range(args.batch):
     #print('name is :',name[data_id])
     # IOU
-ave_iou = cal_average_iou(pred, label_)
-iou,_ = iou_score(pred, label_, data_id)
+ave_iou = cal_average_iou(pred, label_, num_time=num_time, batch_size=args.batch)
+iou,_ = iou_score(pred, label_, data_id, num_time=num_time)
 iou = str(iou)
 print('name is :',name[data_id])
 device2 = torch.device('cpu')
