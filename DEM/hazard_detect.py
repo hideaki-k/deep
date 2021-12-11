@@ -14,13 +14,13 @@ import time
 #new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_ver2/alhat_label'
 #new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_ver2/simple_label'
 #new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate/simple_label'
-new_dir_path = r'C:\Users\hp731\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate_1124\simple_label'
+new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate_1124\0deg\simple_label'
 os.makedirs(new_dir_path, exist_ok=True)
 #original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0-5deg)_dem(noisy)/model/'
 #original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_ver2/model/'
 #original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0-5deg)_dem(noisy)/model/'
 #original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(deg)_dem(noisy)_ver2/model/'
-original_DEM_path = r'C:\Users\hp731\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate_1124\model'
+original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate_1124\0deg\model'
 file_mei = 11
 observed = 0
 if observed:
@@ -28,9 +28,9 @@ if observed:
     read_path_ = os.path.join(original_DEM_path,add_path_)
     rei = scipy.io.loadmat(read_path_)['DEM']
 else:
-    add_path_ = 'real_model_0_'+str(file_mei)+'.mat'
+    add_path_ = 'real_model_'+str(file_mei)+'.mat'
     read_path_ = os.path.join(original_DEM_path,add_path_)
-    rei = scipy.io.loadmat(read_path_)['true_DEM_0']
+    rei = scipy.io.loadmat(read_path_)['true_DEM']
 read_path_ = os.path.join(original_DEM_path,add_path_)
 
 
@@ -72,54 +72,7 @@ def Get_Slope(roi):
     goal_inliers = n * 0.1
 
     xyzs = np.zeros((F**2, 3))
-
-    #print(roi.shape)
-    #print(roi)
-    """
-    i = 0
-    for x in range(F):
-        for y in range(F):
-    
-            z = roi[x][y]
-            #print(i,x,y,z)
-            xyzs[i][0] = x 
-            xyzs[i][1] = y
-            xyzs[i][2] = z
-            i += 1
-    """
-    #print(xyzs)
-
-    # RANSAC
-    #m, best_inliers = run_ransac(xyzs, estimate, lambda x, y: is_inlier(x, y, 0.01), 3, goal_inliers, max_iterations)
-    #a, b, c, d = m
-
-    #描画
-    #xx, yy, zz = plot_plane(a, b, c, d)
-    """
-    fig = plt.figure()
-    ax = mplot3d.Axes3D(fig)
-    ax.scatter3D(xyzs.T[0], xyzs.T[1], xyzs.T[2])
-    ax.plot_surface(xx, yy, zz, color=(0, 1, 0, 0.5))
-    """
     smooth = 1e-6
-    #ans = math.degrees(math.atan(abs(a/(c+smooth))) + math.degrees(math.atan(abs(b/(c+smooth)))))
-    #ans_tate = math.degrees(math.atan(abs(a/(c+smooth))))
-    #ans = math.degrees(math.atan(abs(b/(c+smooth))))
-    #ax.set_title("tate,yoko")
-    # 9/10変更
-    
-    #print('roi',roi.shape)
-    """
-    center = roi[4,4]
-    W = roi[0,4]
-    E = roi[8,4]
-    S = roi[4,8]
-    N = roi[4,0]
-    SE = roi[8,8]
-    SW = roi[0,8]
-    NE = roi[8,0]
-    NW = roi[0,0]
-    """
     center = roi[2,2]
     W = roi[0,2]
     E = roi[4,2]
@@ -192,9 +145,9 @@ for file_num in range(512):
         read_path_ = os.path.join(original_DEM_path,add_path_)
         DEM = scipy.io.loadmat(read_path_)['DEM']
     else:
-        add_path_ = 'real_model_0_'+str(file_num)+'.mat'
+        add_path_ = 'real_model_'+str(file_num)+'.mat'
         read_path_ = os.path.join(original_DEM_path,add_path_)
-        DEM = scipy.io.loadmat(read_path_)['true_DEM_0'] 
+        DEM = scipy.io.loadmat(read_path_)['true_DEM'] 
     
 
     print('READ_PATH:',read_path_)
