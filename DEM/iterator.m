@@ -14,13 +14,13 @@ addpath(' C:\Users\hp731\Documents\GitHub\deep\DEM\terrain_generation');
 
 
 is_evaluate = true;
-evaluate_angle = 0;
+evaluate_angle = 5;
 
 % 0deg,5deg“¯‚¶’nŒ`‚ÉŒXŽÎŠp“ñ‚Â
-is_double_terrain = true;
+is_double_terrain = 0;
 
 if is_double_terrain
-    folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate_1124";
+    folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate_1217";
     
 elseif is_evaluate %è©•ä¾¡ç”¨
     folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate";
@@ -42,7 +42,7 @@ mkdir(folder_name,'image')
 mkdir(folder_name,'label');
 mkdir(folder_name,'model');
 % 7680:1:16640
-for i=0:1:128
+for i=640:1:768
    if is_double_terrain
        evaluate_angle=5
         double_terrain_generation(i,0,pix,evaluate_angle,folder_name,is_noise,is_boulder);

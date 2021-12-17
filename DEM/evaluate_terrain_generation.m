@@ -7,7 +7,7 @@ function f = evaluate_terrain_generation(k,mode,pix,angle,folder_name,is_noise,i
     noise_min = 0;
     noise_max = 0.8;
    % noise_val = (noise_max-noise_min).*rand(1)+noise_min; % ノイズ
-   noise_val = 0.8
+   noise_val = 0.2
     
     %% クレータの個数 & 座標を決定
 
@@ -18,7 +18,7 @@ function f = evaluate_terrain_generation(k,mode,pix,angle,folder_name,is_noise,i
     R = zeros(crater_num,1);
    for crater = 1:1:crater_num
       % R(crater) = 3 + (-3 + 15)*rand(1); %クレータ半径(3~10)
-       R(crater) = 15;
+       R(crater) = 6;
        x_cord = 3 + (3 + 64)*rand(1);
        y_cord = 3 + (3 + 64)*rand(1);
        center_x_list(crater) = round(x_cord);
@@ -107,23 +107,13 @@ function f = evaluate_terrain_generation(k,mode,pix,angle,folder_name,is_noise,i
         view(3)
         savefig('model.fig')
        
-%         figure(2)
-%         s = surf(label_data);
-%         s.EdgeColor = 'none';
-%         xlabel('X');
-%         ylabel('Y');
-%         zlim([-10 24])
-%         colormap turbo
-%         colorbar
-%         view(3)
-%         savefig('label.fig')
         
     end
     time = 0;
     lidar_data = zeros(size_factor,size_factor);
 
-    max_elevation = max(DEM(:));
-    min_elevation = max_elevation-10;
+    max_elevation = max(DEM(:))
+    min_elevation = max_elevation-20
     for i = max_elevation:-1:min_elevation
 
         time = time+1;
