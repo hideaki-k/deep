@@ -10,19 +10,13 @@ from ransac import *
 from sklearn.preprocessing import MinMaxScaler
 import time
 #
-#new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0-5deg)_dem(noisy)/simple_label'
-#new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_ver2/alhat_label'
-#new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_ver2/simple_label'
-#new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate/simple_label'
-new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate_1124\0deg\simple_label'
+#new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(5deg)_dem(noisy)/alhat_label'
+new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_evaluate/alhat_label_quantum'
 os.makedirs(new_dir_path, exist_ok=True)
-#original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0-5deg)_dem(noisy)/model/'
-#original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_ver2/model/'
-#original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0-5deg)_dem(noisy)/model/'
-#original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(deg)_dem(noisy)_ver2/model/'
-original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate_1124\0deg\model'
+#original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(5deg)_dem(noisy)/model/'
+original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_evaluate/model/'
 file_mei = 11
-observed = 0
+observed = 1
 if observed:
     add_path_ = 'observed_model_'+str(file_mei)+'.mat'
     read_path_ = os.path.join(original_DEM_path,add_path_)
@@ -39,7 +33,7 @@ print(rei)
 height = rei.shape[0]
 width = rei.shape[1]
 # ウィンドウ大きさ
-F = 5
+F = 9
 
 def min_max(x, axis=None):
     min = x.min(axis=axis, keepdims=True)
@@ -66,21 +60,53 @@ def plot_plane(a, b, c, d):
     
 def Get_Slope(roi):
 
-
     n = 100
-    max_iterations = 10
+    max_iterations = 500
     goal_inliers = n * 0.1
-
     xyzs = np.zeros((F**2, 3))
+
+    #print(roi.shape)
+    #print(roi)
+    i = 0
+    for x in range(F):
+        for y in range(F):
+    
+            z = roi[x][y]
+            #print(i,x,y,z)
+            xyzs[i][0] = x 
+            xyzs[i][1] = y
+            xyzs[i][2] = z
+            i += 1
+    #print(xyzs)
+
+    # RANSAC
+    m, best_inliers = run_ransac(xyzs, estimate, lambda x, y: is_inlier(x, y, 0.01), 3, goal_inliers, max_iterations)
+    a, b, c, d = m
+
+    #描画
+    xx, yy, zz = plot_plane(a, b, c, d)
+    """
+    fig = plt.figure()
+    ax = mplot3d.Axes3D(fig)
+    ax.scatter3D(xyzs.T[0], xyzs.T[1], xyzs.T[2])
+    ax.plot_surface(xx, yy, zz, color=(0, 1, 0, 0.5))
+    """
     smooth = 1e-6
-    center = roi[2,2]
-    W = roi[0,2]
-    E = roi[4,2]
-    S = roi[2,4]
-    N = roi[2,0]
-    SE = roi[4,4]
-    SW = roi[0,4]
-    NE = roi[4,0]
+    #ans = math.degrees(math.atan(abs(a/(c+smooth))) + math.degrees(math.atan(abs(b/(c+smooth)))))
+    #ans_tate = math.degrees(math.atan(abs(a/(c+smooth))))
+    #ans = math.degrees(math.atan(abs(b/(c+smooth))))
+    #ax.set_title("tate,yoko")
+    # 9/10変更
+    
+    #print('roi',roi.shape)
+    center = roi[4,4]
+    W = roi[0,4]
+    E = roi[8,4]
+    S = roi[4,8]
+    N = roi[4,0]
+    SE = roi[8,8]
+    SW = roi[0,8]
+    NE = roi[8,0]
     NW = roi[0,0]
     fx = ((SE-SW+np.sqrt(2))*(E-W)+NE-NW)/(4+2*np.sqrt(2))
     fy = ((NW-SW+np.sqrt(2))*(N-S)+NE-SE)/(4+2*np.sqrt(2))
@@ -99,24 +125,15 @@ def Get_Slope(roi):
     """
     #一枚当たりの処理時間を表示
 
-    return theta #, m
+    return theta, m
 
     
 
-def Get_Roughness(cropped):
+def Get_Roughness(cropped, m, x_ary, y_ary):
 
-    #a,b,c,d = m
+    a,b,c,d = m
     smooth = 1e-6
-    """
-    #print("cropped.shape",cropped.shape,type(cropped))
-    #print("x",x.shape)
 
-    z = x_ary*(-a/(c+smooth)) + y_ary*(-b/(c+smooth))+ (-d/(c+smooth))
-    #print("z",z.shape)
-    diff = cropped-z
-    #print("diff",diff.shape)
-    roughness = np.nanmax(diff) 
-    
     diff = [0]
     for x in range(F):
         for y in range(F):
@@ -124,21 +141,19 @@ def Get_Roughness(cropped):
             #print("z",z)
             #print("cropped[x][y]-z",cropped[x][y]-z)
             diff_ = cropped[x][y]-z
-            if diff_ > 1:
+            if diff_ > 5:
                 pass
             else:
                 diff.append(cropped[x][y]-z)
-
+    
     roughness = max(diff) 
-    """
-    roughness = np.var(cropped)
     return roughness
 
 # Get_roughness内の計算用配列
-#x_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
-#y_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
+x_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
+y_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
 
-for file_num in range(512):
+for file_num in range(1000):
 
     if observed:
         add_path_ = 'observed_model_'+str(file_num)+'.mat'
@@ -162,7 +177,7 @@ for file_num in range(512):
     scale = 1.0
    
 
-    rotate_list = [0.0,90.0,180.0,270.0,360.0]
+    rotate_list = [0.0, 45.0, 90.0, 135.0, 180.0]
 
     V = np.zeros((height,width)) # safety for each pixel
     S = np.zeros((height,width)) # slope for each pixel
@@ -191,7 +206,7 @@ for file_num in range(512):
                 plt.show()
                 
                 """
-                suiheido = Get_Slope(cropped)
+                suiheido, m = Get_Slope(cropped)
 
                 if suiheido > S[row][col]: # ワーストケースを記録
                     S[row][col] = suiheido
@@ -203,7 +218,7 @@ for file_num in range(512):
                 elif row==height-(F//2)-2 or col==width-(F//2)-2:
                     heitando=0
                 else:
-                    heitando = Get_Roughness(cropped)   
+                    heitando = Get_Roughness(cropped, m, x_ary, y_ary)   
 
                 if heitando > R[row][col]:
                     R[row][col] = heitando
@@ -236,8 +251,11 @@ for file_num in range(512):
     '''
     #print("max S",np.max(S))
     #print("max R",np.max(R))
+    ## 12/13 ISTS 標準閾値　S = S>0.98　R = R>2　
+    ## 12/13 高い閾値　 S = S>1.5 R = R>5
     S = S>0.98
-    R = R>0.1
+    R = R>2
+
 
     hazard = (S|R)
 
@@ -260,6 +278,4 @@ for file_num in range(512):
     #一枚当たりの処理時間を表示
     elapsed_time = time.time() - start
     print ("elapsed_time:{0}".format(elapsed_time) + "[sec]")
-    
-
     
