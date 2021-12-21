@@ -245,6 +245,7 @@ class SNU_Network(torch.nn.Module):
         iou = []
         cnt = []
         for i in range(2,7):
+            #i = i*10 # if t-70
             output = np.where(outputs>i,1,0)
             label = np.where(labels>0,1,0)
             intersection = (np.uint64(output) & np.uint64(label)).sum((1,2)) # will be zero if Trueth=0 or Prediction=0
