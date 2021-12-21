@@ -28,7 +28,8 @@ class LoadDataset(torch.utils.data.Dataset):
         return len(self.df)
 
     def __getitem__(self, i):
-        
+
+        name = self.df['id'][i]
         image = cv2.imread(self.image_paths[i] ) # 画像読み取り
         label = scipy.io.loadmat(self.df['label'][i]) #matfile　kuga_label or alhat_label 
 
@@ -48,7 +49,7 @@ class LoadDataset(torch.utils.data.Dataset):
         
 
         #print('label',label.shape) # (4096,) 0 or 1
-        return image, label
+        return image, label, name
 
 class ConvAutoencoder(nn.Module):
     def __init__(self):
@@ -143,6 +144,7 @@ def main():
     test_dataset = LoadDataset("ann_eval_loc.csv")
     data_id = 2
     print(np.array(train_dataset[data_id][0]).shape) #(784, 100) 
+
     train_iter = DataLoader(train_dataset, batch_size=args.batch, shuffle=False)
     test_iter = DataLoader(test_dataset, batch_size=args.batch, shuffle=False)
 
@@ -155,12 +157,16 @@ def main():
     optimizer = optim.Adam(net.parameters(), lr = 1e-4)
     acces = []
     losses = []                                     #epoch毎のlossを記録
-    epoch_time = 30
+    epoch_time = 50
     for epoch in range(epoch_time):
         running_loss = 0.0 
         running_iou = 0.0                         #epoch毎のlossの計算
         net.train()
-        for i, (inputs, labels) in enumerate(train_iter):
+        if epoch == 0:
+            torch.save(net.state_dict(), "models_state_dict_"+str(epoch)+"epochs.pth")
+            print('MODEL SAVE')
+
+        for i, (inputs, labels, name) in enumerate(train_iter):
             inputs = inputs.to(device)
             labels = labels.to(device)
             #labels= torch.where(labels>0,255,0).to(torch.float32)
@@ -184,7 +190,14 @@ def main():
         losses.append(running_loss/(i + 1))
         acces.append(running_iou/(i+1))
 
+    print(name[data_id])
+    # ログファイル二セーブ
+    path_w = 'train_dataset_log.txt'
+    with open(path_w, mode='w') as f:
+    # <class '_io.TextIOWrapper'>
+        f.write(name[data_id])
     #lossの可視化
+    
     fig = plt.figure(facecolor='oldlace')
     ax1 = fig.add_subplot(1,2,1)
     ax2 = fig.add_subplot(1,2,2)
@@ -198,5 +211,7 @@ def main():
     ax2.set_xlabel("epoch time")
     plt.savefig("loss_iou")
     plt.show()
+    torch.save(net.state_dict(), "models_state_dict_end.pth")
+
 if __name__ == '__main__':
     main()
