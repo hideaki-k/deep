@@ -4,42 +4,50 @@ from PIL import Image
 import matplotlib.animation as animation
 import time
 import scipy.io
-#image = scipy.io.loadmat('crater/data_10.mat')
+#image = scipy.io.loadmat('bolder/data_0.mat')
 #image = scipy.io.loadmat('terrain_generation/perlin_bolder/data_10.mat')
 #image = scipy.io.loadmat('two_craters_label/data_10.mat')
-image = scipy.io.loadmat('64pix_two_craters_image/data_12.mat')
-print(image)
+#image = scipy.io.loadmat('64pix_(0deg)_dem(noisy)_ver2\image\image(t-70)_1178')
+image = scipy.io.loadmat(r'64pix_(0deg)_dem(noisy)_evaluate_1124\5deg\image\image_1.mat')
+#print(image)
 
-print(type(image))
-print(image.keys())
-print(image.values())
-print(image.items())
-print(image['time_data'])
+#print(type(image))
+#print(image.keys())
+#print(image.values())
+#print(image.items())
+#print(image['time_data'])
 
 print(image['time_data'].shape)
-#plt.imshow(image['label_data'])
-#plt.show()
+
 
 fig, ax = plt.subplots()
-N = 10
+N = 20
 def update(i):
+    if i == 1:
+        print("===========")
     img = image['time_data'][:,:,i]
+    #print(i)
     
     plt.clf()
     
     plt.imshow(img,cmap='gray')
-hoge = animation.FuncAnimation(fig, update, np.arange(1,  N), interval=25)  # 代入しないと消される
+hoge = animation.FuncAnimation(fig, update, np.arange(1,  N), interval=100)  # 代入しないと消される
+hoge.save('20_anim.gif', writer='PillowWriter')
 plt.show()
 
-label =  scipy.io.loadmat('64pix_two_craters_label/data_12.mat')
+"""
+### ラベル可視化
+np.set_printoptions(threshold=10000000)
+label =  scipy.io.loadmat('64pix_(0deg)_dem(noisy)/label/label_151.mat')
 print(label.keys())
 print(label.values())
 print(label.items())
 label_img = label['label_data']
+print(label_img)
 plt.imshow(label_img)
 plt.show()
 
-""""
+
 print(image['image'])
 print(type(image['image']))
 print(image['image'][:,:,1])

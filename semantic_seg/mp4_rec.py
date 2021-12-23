@@ -21,13 +21,15 @@ print("mkdir !")
 
 OUT_FILE_NAME_ = str(new_dir_path)+"/inputs_output_video.mp4"
 #OUT_FILE_NAME = "output_video.avi"
-def mk_txt(model_name,iou):
+def mk_txt(model_name,iou,name):
     model_name = model_name.replace('models/','')
     model_name = model_name.replace('/','__')
     model_name = model_name.replace('.pth','')
     path = str(new_dir_path)+"/"+str(model_name)+'.txt'
     f = open(path,'w')
     f.write(iou)
+    f.write('\n')
+    f.write(name)
     f.close()
 
 def rectangle_record(x,num_time=20,data_id=2):
@@ -53,7 +55,9 @@ def label_save(label,data_id):
     image = label[data_id].reshape(64,64)
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.imshow(image)
+    ax.set_xlabel('x[pix]')
+    ax.set_ylabel('y[pix]')
+    ax.imshow(image,cmap=cm.gray)
     fig.savefig(str(new_dir_path)+'/label.png')
 
 
@@ -78,7 +82,7 @@ def record(x,num_time=20,data_id=2): # x : output
     ani.save(str(new_dir_path)+"/outputs.gif", writer="pillow", fps=10)
     #plt.show()
 
-def heatmap(x,kyorigazou,num_time=20,data_id=2,label_img=None, iou=0): # 画像を時間軸方向に積算してヒートマップに
+def heatmap(x,kyorigazou,num_time=20,data_id=2,label_img=None, iou=0,max_iou_ind=7): # 画像を時間軸方向に積算してヒートマップに
     print("x",x.shape)
     x = x[data_id].squeeze(1)
     kyorigazou = kyorigazou[data_id]
@@ -86,6 +90,16 @@ def heatmap(x,kyorigazou,num_time=20,data_id=2,label_img=None, iou=0): # 画像�
     print("x",x.shape) # x (11, 64, 64)
     sum_x = np.sum(x,axis=0)
     print("sum_x",sum_x.shape) # sum_x (64, 64)
+
+    fig = plt.figure()
+    print("max_iou_ind",max_iou_ind)
+    ax = fig.add_subplot(111)
+    pred_threshold = np.where(sum_x > max_iou_ind, 1, 0)
+    ax.set_xlabel('x[pix]')
+    ax.set_ylabel('y[pix]')
+    ax.imshow(pred_threshold,cmap=cm.gray)
+    plt.savefig(str(new_dir_path)+"/max_thresholding_image.png")
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
     #H = ax.hist2d(sum_x[0],sum_x[1],bins=40,cmap=cm.jet)
@@ -97,13 +111,15 @@ def heatmap(x,kyorigazou,num_time=20,data_id=2,label_img=None, iou=0): # 画像�
     
     #plt.show()  
     plt.savefig(str(new_dir_path)+"/heatmap_image.png")
-    print("save heat")
+    #print("save heat")
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.imshow(kyorigazou)
-    plt.savefig(str(new_dir_path)+"/kyorigazou.png")
-    print("save heat")
+    ax.set_xlabel('x[pix]')
+    ax.set_ylabel('y[pix]')
+    ax.imshow(kyorigazou,cmap=cm.winter)
+    plt.savefig(str(new_dir_path)+"/DEM.png")
+ 
 
     # visualize IoU
     label_img = label_img[data_id].reshape(64,64)

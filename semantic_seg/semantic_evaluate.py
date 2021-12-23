@@ -149,12 +149,12 @@ def iou_score(outputs, labels, data_id, num_time):
     print('max--recall',recall_list[ind])
     print('max--F',F_list[ind])
 
-    return iou_max,  cnt
+    return iou_max,  cnt, ind
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch', '-b', type=int, default=32)
 parser.add_argument('--epoch', '-e', type=int, default=50)
-parser.add_argument('--time', '-t', type=int, default=20,
+parser.add_argument('--time', '-t', type=int, default=21,
                         help='Total simulation time steps.')
 parser.add_argument('--rec', '-r', type=str, default=False)     
 parser.add_argument('--forget', '-f', action='store_true' ,default=False)   
@@ -182,18 +182,19 @@ print("load model")
 #summary(model)
 
 ####　必ず確認！
-data_id = 2
+data_id = 3
 num_time = args.time
 
 # test_img : 評価用画像生成
 # inputs_, label_ = test_img() 
 #valid_dataset = LoadDataset("semantic_eval_loc.csv")
-valid_dataset = LoadDataset("evaluate_variety_dem_loc.csv", num_time)
+valid_dataset = LoadDataset("evaluate_1124.csv", num_time)
+#valid_dataset = LoadDataset("evaluate_variety_dem_loc.csv", num_time)
 valid_iter = DataLoader(valid_dataset, batch_size=args.batch, shuffle=False)
 for i,(inputs, labels, kyorigazou, name) in enumerate(valid_iter, 0):
    #1-4 5-8 9-12 13-16 17-20(batch=32)
    #1-16 17-33 34-50 51-67 68-84(batch=8)
-    if i== 5: 
+    if i== 1: 
         break
     else:
         print('======i=======',i)
@@ -219,7 +220,7 @@ for i,(inputs, labels, kyorigazou, name) in enumerate(valid_iter, 0):
     #print('name is :',name[data_id])
     # IOU
 ave_iou = cal_average_iou(pred, label_, num_time=num_time, batch_size=args.batch)
-iou,_ = iou_score(pred, label_, data_id, num_time=num_time)
+iou,_,max_iou_ind = iou_score(pred, label_, data_id, num_time=num_time)
 iou = str(iou)
 print('name is :',name[data_id])
 device2 = torch.device('cpu')
@@ -234,11 +235,11 @@ label_ = label_.detach().clone().numpy()
 
 
 #ディレクトリ生成
-mk_txt(model_path,iou)
+mk_txt(model_path,iou,name[data_id])
 # label　の可視化
 label_save(label_,data_id=data_id)
 #results(最終層出力)の可視化
-heatmap(result, depth, num_time=num_time, data_id=data_id,label_img=label_,iou=iou)
+heatmap(result, depth, num_time=num_time, data_id=data_id,label_img=label_,iou=iou,max_iou_ind=max_iou_ind)
 
 # inputs の可視化
 rectangle_record(inputs_,num_time=num_time,data_id=data_id)

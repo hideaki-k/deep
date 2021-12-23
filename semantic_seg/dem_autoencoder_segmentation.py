@@ -28,14 +28,15 @@ class LoadDataset(torch.utils.data.Dataset):
         return len(self.df)
 
     def __getitem__(self, i):
-        
+     
+        name = self.df['id'][i]
         image = scipy.io.loadmat(self.df['id'][i])
         label = scipy.io.loadmat(self.df['label'][i])
 
         image = image['time_data']
         label = label['label_data']
-        #print("image : ",image.shape)
-        #print("label : ",label.shape)
+
+        #image = image.reshape(4096,20)
         image = image.reshape(4096,20)
         #print("image : ",image.shape)
         image = image.astype(np.float32)
@@ -43,12 +44,12 @@ class LoadDataset(torch.utils.data.Dataset):
         #label = torch.tensor(label,dtype =torch.int64 )
         label = label.reshape(4096)
         label = label.astype(np.float32)
-        return image, label
+        return image, label, name
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--batch', '-b', type=int, default=128)
+parser.add_argument('--batch', '-b', type=int, default=32)
 parser.add_argument('--epoch', '-e', type=int, default=50)
-parser.add_argument('--time', '-t', type=int, default=20,
+parser.add_argument('--time', '-t', type=int, default=21,
                         help='Total simulation time steps.')
 parser.add_argument('--rec', '-r', action='store_true' ,default=False)  # -r付けるとTrue                  
 parser.add_argument('--forget', '-f', action='store_true' ,default=False) 
@@ -60,14 +61,14 @@ print("***************************")
 train_dataset = LoadDataset("semantic_img_loc.csv")
 test_dataset = LoadDataset("semantic_eval_loc.csv")
 data_id = 2
-print(np.array(train_dataset[data_id][0]).shape) #(784, 100) 
+#print(train_dataset[data_id][0]) #(784, 100) 
 train_iter = DataLoader(train_dataset, batch_size=args.batch, shuffle=False)
 test_iter = DataLoader(test_dataset, batch_size=args.batch, shuffle=False)
 
 # ネットワーク設計
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # 畳み込みオートエンコーダー　リカレントSNN　
-model = network.SNU_Network(num_time=args.time,l_tau=0.8,rec=args.rec, forget=args.forget, dual=args.dual, gpu=True,batch_size=args.batch)
+model = network.SNU_Network(num_time=args.time,l_tau=0.8,rec=args.rec, forget=args.forget, dual=args.dual, gpu=True, batch_size=args.batch)
 
 # 全結合 リカレントSNN
 # model = network.Fully_Connected_Gated_SNU_Net(rec=args.rec)
@@ -114,7 +115,7 @@ for epoch in tqdm(range(epochs)):
         torch.save(model.state_dict(), "models/models_state_dict_"+str(epoch)+"epochs.pth")
         print("success model saving")
     with tqdm(total=len(train_dataset),desc=f'Epoch{epoch+1}/{epochs}',unit='img')as pbar:
-        for i,(inputs, labels) in enumerate(train_iter, 0):
+        for i,(inputs, labels, name) in enumerate(train_iter, 0):
             optimizer.zero_grad()
 
             inputs = inputs.to(device)
@@ -171,7 +172,7 @@ for epoch in tqdm(range(epochs)):
     mean_eval_acc_4 = np.mean(eval_acc_4)
     mean_eval_acc_5 = np.mean(eval_acc_5)
     
-    print("mean iou ",mean_acc_5)
+    print("mean iou 2:3:4:5:6 ",mean_eval_acc_1,mean_eval_acc_2,mean_eval_acc_3,mean_eval_acc_4,mean_eval_acc_5,sep='--')
     acc_hist_1.append(mean_acc_1)
     acc_hist_2.append(mean_acc_2)
     acc_hist_3.append(mean_acc_3)
@@ -187,6 +188,13 @@ for epoch in tqdm(range(epochs)):
     mean_loss = np.mean(local_loss) 
     print("mean loss",mean_loss)
     loss_hist.append(mean_loss)
+
+# ログファイル二セーブ
+path_w = 'train_dataset_log.txt'
+with open(path_w, mode='w') as f:
+# <class '_io.TextIOWrapper'>
+    f.write(name[data_id])
+#lossの可視化
 
 fig = plt.figure(facecolor='oldlace')
 ax1 = fig.add_subplot(1,3,1)
