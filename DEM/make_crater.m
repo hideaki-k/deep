@@ -22,7 +22,7 @@ function f = make_crater(k,mode)
     for i =  1:1:size_factor
         for j = 1:1:size_factor
 
-            y = wgn(1,1,-3);
+            y = 0;
             r = sqrt(abs(i-center)^2 + abs(j-center)^2)+y;
              if r <= alpha
                  h = (H_c+H_ro)*(r^2/R^2)-H_c;
@@ -38,7 +38,8 @@ function f = make_crater(k,mode)
         end
     end
     model;
-    model = round(model,0);
+    true_DEM = model;
+    DEM = round(model,0);
 
     a = max(model(:)); %22013
     b = a-10;
@@ -81,9 +82,20 @@ function f = make_crater(k,mode)
         close(v);
     end
     filenum = string(k)
-    filename = "scan_crater/data_"+filenum
-    save(filename,'time_data')
+    filename = "simple_crater/image/data_"+filenum;
+    save(filename,'time_data');
     
+    filename = "simple_crater/model(t-10)/observed_model_"+filenum
+    save(filename,'DEM');
+    kyorigazou = mat2gray(DEM);
+    filename = "simple_crater/model(t-10)/observed_model_"+filenum+'.png';
+    imwrite(kyorigazou,filename);
+    
+    filename = "simple_crater/model/observed_model_"+filenum
+    save(filename, 'model');
+    kyorigazou = mat2gray(model);
+    filename = "simple_crater/model/observed_model_"+filenum+'.png';
+    imwrite(kyorigazou,filename);
 
 end
 
