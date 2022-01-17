@@ -5,25 +5,25 @@ clc
 pix = 64;
 max_angle = 5;
 angle = 0;
-is_mixangle = true;
-is_noise = true;
+
 is_boulder = false;
 
 addpath(' C:\Users\aki\Documents\GitHub\deep\DEM\terrain_generation');
 addpath(' C:\Users\hp731\Documents\GitHub\deep\DEM\terrain_generation');
 
-
-is_evaluate = true;
-evaluate_angle = 5;
+is_mixangle = 0;
+is_noise = 1;
+is_evaluate = 0;
+evaluate_angle = 0;
 
 % 0deg,5deg“¯‚¶’nŒ`‚ÉŒXŽÎŠp“ñ‚Â
 is_double_terrain = 0;
 
 if is_double_terrain
-    folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate_1217";
+    folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate_112";
     
 elseif is_evaluate %è©•ä¾¡ç”¨
-    folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate";
+    folder_name = string(pix)+"pix_("+string(evaluate_angle)+"deg)_dem(noisy)_evaluate_112";
 
 
 elseif is_noise
@@ -32,7 +32,7 @@ elseif is_noise
     if is_mixangle; %ã‚¢ãƒ³ã‚°ãƒ«æ··åœ¨
         folder_name = string(pix)+"pix_(0-"+string(max_angle)+"deg)_dem(noisy)"; % 9/13
     else %ã‚¢ãƒ³ã‚°ãƒ«å›ºå®?
-        folder_name = string(pix)+"pix_(0-"+string(angle)+"deg)_dem(noisy)";
+        folder_name = string(pix)+"pix_(0-"+string(angle)+"deg)_dem(lidar_noisy)"; % 1/17
     end
 else
     %folder_name = string(pix)+"pix_("+string(angle)+"deg)_dem_ver2";
@@ -42,9 +42,9 @@ mkdir(folder_name,'image')
 mkdir(folder_name,'label');
 mkdir(folder_name,'model');
 % 7680:1:16640
-for i=640:1:768
+for i=0:1:16640
    if is_double_terrain
-       evaluate_angle=5
+       evaluate_angle=0
         double_terrain_generation(i,0,pix,evaluate_angle,folder_name,is_noise,is_boulder);
     
    elseif is_evaluate

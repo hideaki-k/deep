@@ -10,7 +10,7 @@ function DEM = put_hazard(base,is_noise, center_of_x, center_of_y,R, is_boulder,
     f = @(t) myinterpolation(t);
     H = perlin_2d(f, 1, X, Y);
     size(H);
-    noise_min = 0;
+    noise_min = 0.2;
     noise_max = 0.8;
     noise_val = (noise_max-noise_min).*rand(1)+noise_min;
     else

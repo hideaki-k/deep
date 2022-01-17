@@ -11,21 +11,21 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
     direct = round(rand(1),0);
     up_down= round(rand(1),0);
     
-    if up_down == 1
-        up_down = 1;
-    else 
-        up_down = -1;
-    end
-
-    for i=1:1:size_factor
-        for j=1:1:size_factor
-            if direct==1
-                base(:,j) = (up_down)*j*tan(deg2rad(angle));
-            else
-                base(i,:) = (up_down)*i*tan(deg2rad(angle));   
-            end
-        end
-    end
+%     if up_down == 1
+%         up_down = 1;
+%     else 
+%         up_down = -1;
+%     end
+% 
+%     for i=1:1:size_factor
+%         for j=1:1:size_factor
+%             if direct==1
+%                 base(:,j) = (up_down)*j*tan(deg2rad(angle));
+%             else
+%                 base(i,:) = (up_down)*i*tan(deg2rad(angle));   
+%             end
+%         end
+%     end
 
    %% クレータの個数 & 座標を決定
    crater_num = round(1 + (1 + 6)*rand(1)); % クレータ個数(1~6)
@@ -68,19 +68,20 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
    end
 
    end
- %% ノイズの度合い
-    noise_min = 0;
+ %% パーリンノイズの度合い
+    noise_min = 0.2;
     noise_max = 0.8;
     noise_val = (noise_max-noise_min).*rand(1)+noise_min;
     
  %% put_hazard
-    DEM = put_hazard(base,is_noise, noise_val, center_x_list, center_y_list, R, is_boulder, boulder_center_x_list, boulder_center_y_list, boulder_xziku_list, boulder_yziku_list, boulder_zziku_list);
+    DEM = put_hazard(base,is_noise, center_x_list, center_y_list, R, is_boulder, boulder_center_x_list, boulder_center_y_list, boulder_xziku_list, boulder_yziku_list, boulder_zziku_list);
    
-    %% 描画モード（丸め）
-    if mode ~= 2  
+ %% true_DEM
     true_DEM = DEM;    
-    DEM = round(DEM,0);
-    end
+ %% 
+    Lidar_noised_DEM = true_DEM + 0.1*randn(64);
+    DEM = round(Lidar_noised_DEM,0);
+
     %% 動画 v open
 
     if mode == 1
@@ -90,7 +91,17 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
    %% 三次元プロット
     if mode==2
         figure(1)
-        s = surf(DEM);
+        s = surf(true_DEM);
+        s.EdgeColor = 'none';
+        xlabel('X');
+        ylabel('Y');
+        zlim([-20 20])
+        colormap gray
+        colorbar
+        view(3)
+        savefig('model.fig')
+        figure(2)
+        s = surf(Lidar_noised_DEM);
         s.EdgeColor = 'none';
         xlabel('X');
         ylabel('Y');
@@ -100,27 +111,19 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
         view(3)
         savefig('model.fig')
        
-%         figure(2)
-%         s = surf(label_data);
-%         s.EdgeColor = 'none';
-%         xlabel('X');
-%         ylabel('Y');
-%         zlim([-10 24])
-%         colormap turbo
-%         colorbar
-%         view(3)
-%         savefig('label.fig')
+
         
     end
     time = 0;
     lidar_data = zeros(size_factor,size_factor);
-
-    max_elevation = max(DEM(:));
+    
+    %% LIDAR 観測パルス 生成
+    max_elevation = max(Lidar_noised_DEM(:));
     min_elevation = max_elevation-10;
     for i = max_elevation:-1:min_elevation
 
         time = time+1;
-        lidar_data(DEM==i)=1;
+        lidar_data(Lidar_noised_DEM==i)=1;
         time_data(:,:,time) = lidar_data;
         if mode == 1
             imagesc(lidar_data);
@@ -135,6 +138,8 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
     if mode == 1
         close(v);
     end
+    
+
 
     %% 教師データとして保存
     if mode == 0
@@ -144,6 +149,10 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
         filename = folder_name+"/model/real_model_"+filenum;
         save(filename,'true_DEM');
         
+        % Lidar_noised_DEM.mat
+        filename = folder_name+"/model/Lidar_noised_model_"+filenum;
+        save(filename,'Lidar_noised_DEM');
+        
         % observed_DEM.mat hazard_label評価用 8/29追加
         filename = folder_name+"/model/observed_model_"+filenum;
         save(filename,'DEM');
@@ -152,13 +161,13 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
         kyorigazou = mat2gray(true_DEM);
         filename = folder_name+"/model/model_true"+filenum+'.png';
         imwrite(kyorigazou,filename);
-        kyorigazou = mat2gray(DEM);
-        filename = folder_name+"/model/model_"+filenum+'.png';
+        kyorigazou = mat2gray(Lidar_noised_DEM);
+        filename = folder_name+"/model/model_Lidar_noised"+filenum+'.png';
         imwrite(kyorigazou,filename);
         
         % label_data.mat crater中心を塗りつぶした
-        filename = folder_name+"/label/label_"+filenum;
-        save(filename,'label_data');
+        %filename = folder_name+"/label/label_"+filenum;
+        %save(filename,'label_data');
      
         % time_data lidar再現データ
         filename = folder_name+"/image/image_"+filenum
