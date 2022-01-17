@@ -68,10 +68,13 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
    end
 
    end
-
-    DEM = put_hazard(base,is_noise, center_x_list, center_y_list, R, is_boulder, boulder_center_x_list, boulder_center_y_list, boulder_xziku_list, boulder_yziku_list, boulder_zziku_list);
-   
-   
+ %% ノイズの度合い
+    noise_min = 0;
+    noise_max = 0.8;
+    noise_val = (noise_max-noise_min).*rand(1)+noise_min;
+    
+ %% put_hazard
+    DEM = put_hazard(base,is_noise, noise_val, center_x_list, center_y_list, R, is_boulder, boulder_center_x_list, boulder_center_y_list, boulder_xziku_list, boulder_yziku_list, boulder_zziku_list);
    
     %% 描画モード（丸め）
     if mode ~= 2  
