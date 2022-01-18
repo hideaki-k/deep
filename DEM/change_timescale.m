@@ -1,22 +1,24 @@
 % mode  0:保存 1:ビデオ保存 2:三次元プロット 
-addpath 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate\model'
-folder_name = 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate';
+addpath 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-5deg)_dem(noisy)\model'
+folder_name = 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-5deg)_dem(noisy)_back';
 mode = 0;
 size_factor = 64;
-num_time = 70
+time_scale = 100;
+mkdir(folder_name,"image(t-"+time_scale+")");
+mkdir(folder_name,"model(t-"+time_scale+")");
 % real_modelファイルの読み込み
 for i=0:1:16640
     i
     % file読み込み
     file_path = append('real_model_',string(i),'.mat');
-    DEM = load(file_path,'true_DEM')
+    DEM = load(file_path,'true_DEM');
     DEM = DEM.true_DEM;
         
     % 丸目
     DEM = round(DEM,1);
     
     % time_data 用意
-    time_scale = 70;
+    
     time_data = zeros(size_factor,size_factor,time_scale);
     if mode==1
         v = VideoWriter('50_image.avi')
@@ -39,9 +41,13 @@ for i=0:1:16640
 
     time = 0;
     lidar_data = zeros(size_factor,size_factor);
-    max_elevation = max(DEM(:))
-    min_elevation = max(DEM(:))-7;
-    max_elevation-min_elevation
+    message = ['標高差は', num2str(max(DEM(:))-min(DEM(:)))];
+    disp(message);
+    size(time_data)
+    
+    max_elevation = max(DEM(:));
+    min_elevation = max(DEM(:))-10;
+    max_elevation-min_elevation;
     for h = max_elevation:-0.1:min_elevation
          time = time+1;
         lidar_data(DEM==h)=1;
@@ -59,11 +65,21 @@ for i=0:1:16640
     if mode == 1
         close(v)
     end
+    size(time_data)
     %% 教師データとして保存
     if mode == 0
+
         filenum = string(i);
-        filename = folder_name+"/image/image(t-70)_"+filenum;
+        filename = folder_name+"/image(t-"+time_scale+")/image_"+filenum;
         save(filename,'time_data');
+        
+        filename = folder_name+"/model(t-"+time_scale+")/observed_model_"+filenum;
+        save(filename,'DEM');
+        
+        kyorigazou = mat2gray(DEM);
+        filename = folder_name+"/model(t-"+time_scale+")/model_"+filenum+'.png';
+        imwrite(kyorigazou,filename)
+        
     end
   
 end
