@@ -1,6 +1,6 @@
 % mode  0:保存 1:ビデオ保存 2:三次元プロット 
-addpath 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-5deg)_dem(noisy)\model'
-folder_name = 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-5deg)_dem(noisy)_back';
+addpath 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)\model'
+folder_name = 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)';
 mode = 0;
 size_factor = 64;
 time_scale = 100;
