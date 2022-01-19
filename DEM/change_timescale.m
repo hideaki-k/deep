@@ -3,19 +3,22 @@ addpath 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)\
 folder_name = 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)';
 mode = 0;
 size_factor = 64;
-time_scale = 100;
+time_scale = 10;
 mkdir(folder_name,"image(t-"+time_scale+")");
 mkdir(folder_name,"model(t-"+time_scale+")");
 % real_modelファイルの読み込み
 for i=0:1:16640
     i
     % file読み込み
-    file_path = append('real_model_',string(i),'.mat');
-    DEM = load(file_path,'true_DEM');
-    DEM = DEM.true_DEM;
+    %file_path = append('real_model_',string(i),'.mat');
+%     DEM = load(file_path,'true_DEM');
+%     DEM = DEM.true_DEM;
+    file_path = append('Lidar_noised_model_',string(i),'.mat');
+    DEM = load(file_path,'Lidar_noised_DEM');
+    DEM = DEM.Lidar_noised_DEM;
         
     % 丸目
-    DEM = round(DEM,1);
+    DEM = round(DEM,0);
     
     % time_data 用意
     
@@ -48,7 +51,7 @@ for i=0:1:16640
     max_elevation = max(DEM(:));
     min_elevation = max(DEM(:))-10;
     max_elevation-min_elevation;
-    for h = max_elevation:-0.1:min_elevation
+    for h = max_elevation:-1:min_elevation
          time = time+1;
         lidar_data(DEM==h)=1;
         time_data(:,:,time) = lidar_data;
