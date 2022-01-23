@@ -11,21 +11,21 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
     direct = round(rand(1),0);
     up_down= round(rand(1),0);
     
-%     if up_down == 1
-%         up_down = 1;
-%     else 
-%         up_down = -1;
-%     end
-% 
-%     for i=1:1:size_factor
-%         for j=1:1:size_factor
-%             if direct==1
-%                 base(:,j) = (up_down)*j*tan(deg2rad(angle));
-%             else
-%                 base(i,:) = (up_down)*i*tan(deg2rad(angle));   
-%             end
-%         end
-%     end
+    if up_down == 1
+        up_down = 1;
+    else 
+        up_down = -1;
+    end
+
+    for i=1:1:size_factor
+        for j=1:1:size_factor
+            if direct==1
+                base(:,j) = (up_down)*j*tan(deg2rad(angle));
+            else
+                base(i,:) = (up_down)*i*tan(deg2rad(angle));   
+            end
+        end
+    end
 
    %% クレータの個数 & 座標を決定
    crater_num = round(1 + (1 + 6)*rand(1)); % クレータ個数(1~6)
