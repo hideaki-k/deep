@@ -58,6 +58,7 @@ def Get_Slope_alhat(roi):
     # 描画
     xx, yy, zz = plot_plane(a, b, c, d)
 
+    
     center = roi[2,2]
     W = roi[0,2]
     E = roi[4,2]
@@ -70,6 +71,11 @@ def Get_Slope_alhat(roi):
     fx = ((SE-SW+np.sqrt(2))*(E-W)+NE-NW)/(4+2*np.sqrt(2))
     fy = ((NW-SW+np.sqrt(2))*(N-S)+NE-SE)/(4+2*np.sqrt(2))
     theta = np.arctan(fx**2+fy**2)
+    """
+    costheta = np.abs(c)/np.sqrt(((a)**2+(b)**2+(c)**2))
+    #print("costheta:c:np.sqrt",costheta,c,np.sqrt(((a)**2+(b)**2+(c)**2)))
+    theta = 1-np.arccosh(costheta)
+    """
     return  theta, m
 
 def Get_Roughness_alhat(cropped, m):
@@ -126,8 +132,8 @@ def Get_Slope(roi):
     theta = 1-np.arccosh(costheta)
     
     
-    print('SLOPE:a:b:c:d',ans,a,b,c,d)
-    plt.show()
+    #print('SLOPE:a:b:c:d',ans,a,b,c,d)
+    #plt.show()
     """
     #一枚当たりの処理時間を表示
 
@@ -170,7 +176,8 @@ def Get_Roughness(cropped):
 #x_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
 #y_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
 if __name__ == '__main__':
-    new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)\simple_label'
+    new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)_boulder\simple_label'
+    #new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)\simple_label'
     #new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate_112/simple_label'
     #new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate_112/alhat_label'
     #new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0-5deg)_dem(noisy)/simple_label'
@@ -179,14 +186,15 @@ if __name__ == '__main__':
     #new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate/simple_label'
     #new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_evaluate\simple_label_quantum'
     os.makedirs(new_dir_path, exist_ok=True)
-    original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)\model'
+    original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)_boulder\model'
+    #original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)\model(t-10)'
     #original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate_112\noise_0\model'
     #original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0-5deg)_dem(noisy)/model/'
     #original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(deg)_dem(noisy)_ver2/model/'
     #original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_evaluate\model'
     file_mei = 1
     observed = 0
-    lidar_noised = 1
+    lidar_noised = 0
 
     if lidar_noised:
         add_path_ = 'lidar_noised_model_'+str(file_mei)+'.mat'
@@ -235,8 +243,8 @@ if __name__ == '__main__':
 
         scale = 1.0
     
-
-        rotate_list = [0.0,90.0,180.0,270.0,360.0]
+        rotate_list = [0.0,30.0,60.0,90.0,120.0,150.0,180.0]
+        #rotate_list = [0.0,90.0,180.0,270.0,360.0]
 
         V = np.zeros((height,width)) # safety for each pixel
         S = np.zeros((height,width)) # slope for each pixel
