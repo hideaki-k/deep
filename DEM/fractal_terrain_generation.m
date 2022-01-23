@@ -3,7 +3,7 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
 
 %% 斜面 & フラクタルの付与
     size_factor = pix;
-    time_scale = 20;
+    time_scale = 10;
     base = zeros(size_factor,size_factor);
     label_data = zeros(size_factor,size_factor);
     time_data = zeros(size_factor,size_factor,time_scale);
@@ -44,7 +44,7 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
    end
    %% ボルダーの個数 & 座標を決定
 
-    boulder_num = round(5*rand(1)); % ボルダー個数(0~5)
+    boulder_num = round(15*rand(1)); % ボルダー個数(0~5)
     boulder_center_x_list =  zeros(boulder_num,1); % ボルダー中心座標x
     boulder_center_y_list = zeros(boulder_num,1); % ボルダー中心座標y
     boulder_xziku_list = zeros(boulder_num,1); % ボルダーx軸長さ
@@ -60,7 +60,7 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
        boulder_center_y_list(boulder) = round(y_cord);
        % 大きさ
        xr = abs(5*rand(1));
-       yr = abs(5*rand(1));
+       yr = xr;
        zr = 3+abs(1*rand(1));
        boulder_xziku_list(boulder) = round(xr);
        boulder_yziku_list(boulder) = round(yr);
@@ -149,7 +149,7 @@ function f = fractal_terrain_generation(k,mode,pix,angle,folder_name,is_noise,is
         filename = folder_name+"/model/real_model_"+filenum;
         save(filename,'true_DEM');
         
-        % Lidar_noised_DEM.mat
+        % Lidar_noised_DEM.mat 注意:量子化はしていない
         filename = folder_name+"/model/Lidar_noised_model_"+filenum;
         save(filename,'Lidar_noised_DEM');
         

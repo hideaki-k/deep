@@ -35,7 +35,7 @@ def mk_txt(model_name,iou,name):
 def rectangle_record(x,num_time=20,data_id=2):
 
     fig, ax = plt.subplots()
-    N = 20
+    N = num_time
     def update(i):
         if i == 1:
             print("===========")
@@ -67,7 +67,7 @@ def record(x,num_time=20,data_id=2): # x : output
     print(x[2][1].shape)
     print(x[2][1][:].shape)
     fig, ax = plt.subplots()
-    N = 20
+    N = num_time
     def update(i):
         if i == 1:
             print("===========")
@@ -117,7 +117,7 @@ def heatmap(x,kyorigazou,num_time=20,data_id=2,label_img=None, iou=0,max_iou_ind
     ax = fig.add_subplot(111)
     ax.set_xlabel('x[pix]')
     ax.set_ylabel('y[pix]')
-    ax.imshow(kyorigazou,cmap=cm.winter)
+    ax.imshow(kyorigazou,cmap=cm.gray)
     plt.savefig(str(new_dir_path)+"/DEM.png")
  
 
