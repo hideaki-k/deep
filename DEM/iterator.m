@@ -4,9 +4,9 @@ close all
 clc
 pix = 64;
 max_angle = 5;
-angle = 0;
+angle = 3;
 
-is_boulder = false;
+is_boulder = true;
 
 addpath(' C:\Users\aki\Documents\GitHub\deep\DEM\terrain_generation');
 addpath(' C:\Users\hp731\Documents\GitHub\deep\DEM\terrain_generation');
@@ -32,7 +32,7 @@ elseif is_noise
     if is_mixangle; %アングル混在
         folder_name = string(pix)+"pix_(0-"+string(max_angle)+"deg)_dem(noisy)"; % 9/13
     else %アングル固�?
-        folder_name = string(pix)+"pix_(0-"+string(angle)+"deg)_dem(lidar_noisy)"; % 1/17
+        folder_name = string(pix)+"pix_(0-"+string(angle)+"deg)_dem(lidar_noisy)_boulder"; % 1/17
     end
 else
     %folder_name = string(pix)+"pix_("+string(angle)+"deg)_dem_ver2";
