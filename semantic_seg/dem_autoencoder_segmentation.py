@@ -35,9 +35,10 @@ class LoadDataset(torch.utils.data.Dataset):
 
         image = image['time_data']
         label = label['label_data']
-
+        #print("image : ",image.shape)
         #image = image.reshape(4096,20)
-        image = image.reshape(4096,20)
+        image = image.reshape(4096,11)
+      
         #print("image : ",image.shape)
         image = image.astype(np.float32)
         #label = label.astype(np.int64)
@@ -48,10 +49,11 @@ class LoadDataset(torch.utils.data.Dataset):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch', '-b', type=int, default=32)
-parser.add_argument('--epoch', '-e', type=int, default=50)
-parser.add_argument('--time', '-t', type=int, default=21,
+parser.add_argument('--epoch', '-e', type=int, default=100)
+parser.add_argument('--time', '-t', type=int, default=11,
                         help='Total simulation time steps.')
 parser.add_argument('--rec', '-r', action='store_true' ,default=False)  # -r付けるとTrue                  
+
 parser.add_argument('--forget', '-f', action='store_true' ,default=False) 
 parser.add_argument('--dual', '-d', action='store_true' ,default=False)
 args = parser.parse_args()
@@ -125,7 +127,7 @@ for epoch in tqdm(range(epochs)):
             #iou = 各発火閾値ごとに連なり[??(i=1),??(i=2),,,,]
             pred,_ = torch.max(pred,1)
             #print('IoU : ',iou)      
-            acc_1.append(iou[0])
+            acc_1.append(iou[0]) #spike 3 以上
             acc_2.append(iou[1])
             acc_3.append(iou[2])
             acc_4.append(iou[3])
@@ -148,7 +150,7 @@ for epoch in tqdm(range(epochs)):
 
     
     with torch.no_grad():
-        for i,(inputs, labels) in enumerate(test_iter, 0):
+        for i,(inputs, labels, name) in enumerate(test_iter, 0):
             inputs = inputs.to(device)
             labels = labels.to(device)
             loss, pred, _, iou, cnt = model(inputs, labels)
@@ -172,7 +174,7 @@ for epoch in tqdm(range(epochs)):
     mean_eval_acc_4 = np.mean(eval_acc_4)
     mean_eval_acc_5 = np.mean(eval_acc_5)
     
-    print("mean iou 2:3:4:5:6 ",mean_eval_acc_1,mean_eval_acc_2,mean_eval_acc_3,mean_eval_acc_4,mean_eval_acc_5,sep='--')
+    print("mean iou 3:4:5:6:7 ",mean_eval_acc_1,mean_eval_acc_2,mean_eval_acc_3,mean_eval_acc_4,mean_eval_acc_5,sep='--')
     acc_hist_1.append(mean_acc_1)
     acc_hist_2.append(mean_acc_2)
     acc_hist_3.append(mean_acc_3)
@@ -207,20 +209,20 @@ ax1.set_ylabel('LOSS')
 
 ax2.set_title('train IOU')
 ax2.grid()
-ax2.plot(acc_hist_1,label='2')
-ax2.plot(acc_hist_2,label='3')
-ax2.plot(acc_hist_3,label='4')
-ax2.plot(acc_hist_4,label='5')
-ax2.plot(acc_hist_5,label='6')
+ax2.plot(acc_hist_1,label='30')
+ax2.plot(acc_hist_2,label='40')
+ax2.plot(acc_hist_3,label='50')
+ax2.plot(acc_hist_4,label='60')
+ax2.plot(acc_hist_5,label='70')
 ax2.legend(loc=0)
 
 ax3.set_title('Evaluate IOU')
 ax3.grid()
-ax3.plot(acc_eval_hist1,label='2')
-ax3.plot(acc_eval_hist2,label='3')
-ax3.plot(acc_eval_hist3,label='4')
-ax3.plot(acc_eval_hist4,label='5')
-ax3.plot(acc_eval_hist5,label='6')
+ax3.plot(acc_eval_hist1,label='30')
+ax3.plot(acc_eval_hist2,label='40')
+ax3.plot(acc_eval_hist3,label='50')
+ax3.plot(acc_eval_hist4,label='60')
+ax3.plot(acc_eval_hist5,label='70')
 fig.tight_layout()
 
 fig.savefig('models/loss--IOU.jpg')
