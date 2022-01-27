@@ -47,7 +47,7 @@ def iou_score(outputs, labels):
 
 
 
-for file_num in range(512,1000): #14593,14594,1
+for file_num in range(367,1000): #14593,14594,1
 
     # ベースラベル読み込み
     add_path = 'label_'+str(file_num)+'.mat' 
@@ -182,7 +182,7 @@ for file_num in range(512,1000): #14593,14594,1
     plt.savefig(save_path)
 
     # CSV write
-    filename = target_DEM_path +'alhat_simple_ioudata(-512).csv'
+    filename = target_DEM_path +'alhat_simple_ioudata.csv'
     with open(filename, 'a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow([save_path,str(iou),str(precision),str(recall)])
