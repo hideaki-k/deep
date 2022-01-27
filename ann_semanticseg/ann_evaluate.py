@@ -108,7 +108,7 @@ class ConvAutoencoder(nn.Module):
         return x
         '''
 
-def cal_average_iou(outputs, labels):
+def cal_average_iou(outputs, labels, batch_size):
 
     outputs = outputs.data.cpu().numpy() #outputs.shape: (128, 1, 64, 64)
     labels = labels.data.cpu().numpy() 
@@ -117,41 +117,33 @@ def cal_average_iou(outputs, labels):
     average_iou = 0
     average_recall = 0
     average_F = 0
-    for i in range(30):
-        iou_list = []
-        precision_list = []
-        recall_list = []
-        F_list = []
-        for j in range(0,10,1):
-            j = j/10
-            output = np.where(outputs[i]>j,1,0)
-            label = np.where(labels[i]>0,1,0)
-            intersection = (np.uint64(output) & np.uint64(label)).sum((0,1)) # will be zero if Trueth=0 or Prediction=0
-            union = (np.uint64(output) | np.uint64(label)).sum((0,1)) # will be zero if both are 0
-            smooth = 1e-6
+    average_precision = 0
+    for i in range(batch_size):
 
-            precision = (intersection / np.uint64(output).sum((0,1)))
-            recall = (intersection / np.uint64(label).sum((0,1)))
-            iou = ((intersection + smooth) / (union + smooth))
-            F_score = 2*(precision*recall)/(recall+precision)
-            F_score = round(F_score,5)
-            iou = round(iou,5)
-            precision = round(precision,5)
-            recall = round(recall,5)
-            iou_list.append(iou)
-            precision_list.append(precision)
-            recall_list.append(recall)
-            F_list.append(F_score)
 
-        ind_iou = max(iou_list)
-        average_iou += ind_iou
-        ind = iou_list.index(ind_iou)
-        average_recall += recall_list[ind]
-        average_F += F_list[ind]
-    print('average_iou is : ',average_iou/30) 
-    print('average_recall is ',average_recall/30) 
-    print('average_F is : ',average_F/30)  
-    return average_iou/30
+        output = np.where(outputs[i]>=0.5,1,0)
+        label = np.where(labels[i]>0,1,0)
+        intersection = (np.uint64(output) & np.uint64(label)).sum((0,1)) # will be zero if Trueth=0 or Prediction=0
+        union = (np.uint64(output) | np.uint64(label)).sum((0,1)) # will be zero if both are 0
+        smooth = 1e-6
+
+        precision = (intersection / np.uint64(output).sum((0,1)))
+        recall = (intersection / np.uint64(label).sum((0,1)))
+        iou = ((intersection + smooth) / (union + smooth))
+        F_score = 2*(precision*recall)/(recall+precision)
+        F_score = round(F_score,5)
+        iou = round(iou,5)
+        precision = round(precision,5)
+        recall = round(recall,5)
+        average_iou += iou
+        average_precision += precision
+        average_recall += recall
+        
+
+    print('average_iou is : ',average_iou/batch_size) 
+    print('average_recall is ',average_recall/batch_size) 
+    print('average_F is : ',average_F/batch_size)  
+    return average_iou/batch_size
 
 def iou_score(outputs, labels, data_id):
     smooth = 1e-6
@@ -169,40 +161,35 @@ def iou_score(outputs, labels, data_id):
     recall_list = []
     F_list = []
 
-    for j in range(0,10,1):
-        j = j/10
-        output = np.where(outputs[data_id]>j,1,0)
-        label = np.where(labels[data_id]>0,1,0)
-        intersection = (np.uint64(output) & np.uint64(label)).sum((0,1)) # will be zero if Trueth=0 or Prediction=0
-        union = (np.uint64(output) | np.uint64(label)).sum((0,1)) # will be zero if both are 0
 
-        iou = ((intersection + smooth) / (union + smooth))
-        precision = (intersection / np.uint64(output).sum((0,1)))
-        recall = (intersection / np.uint64(label).sum((0,1)))
-        iou = ((intersection + smooth) / (union + smooth))
-        F_score = 2*(precision*recall)/(recall+precision)
-        F_score = round(F_score,5)
-        iou = round(iou,5)
-        precision = round(precision,5)
-        recall = round(recall,5)
-        #print('(j):IOU (',str(j)+') : '+str(iou))
-        iou_list.append(iou)
-        precision_list.append(precision)
-        recall_list.append(recall)
-        F_list.append(F_score)
+    output = np.where(outputs[data_id]>=0.5,1,0)
+    label = np.where(labels[data_id]>0,1,0)
+    intersection = (np.uint64(output) & np.uint64(label)).sum((0,1)) # will be zero if Trueth=0 or Prediction=0
+    union = (np.uint64(output) | np.uint64(label)).sum((0,1)) # will be zero if both are 0
 
-
-    print('iou',iou_list)
-    print('F_list',F_list)
-    print('precision',precision_list)
-    print('recall',recall_list)
+    iou = ((intersection + smooth) / (union + smooth))
+    precision = (intersection / np.uint64(output).sum((0,1)))
+    recall = (intersection / np.uint64(label).sum((0,1)))
+    iou = ((intersection + smooth) / (union + smooth))
+    F_score = 2*(precision*recall)/(recall+precision)
+    F_score = round(F_score,5)
+    iou = round(iou,5)
+    precision = round(precision,5)
+    recall = round(recall,5)
+    #print('(j):IOU (',str(j)+') : '+str(iou))
+ 
+    print('5--iou',iou)
+    print('5--precision',precision)
+    print('5--recall',recall)
+    """
     iou_max = max(iou_list)
     ind = iou_list.index(iou_max)
     print('max--iou',max(iou_list))
     print('max--precision',precision_list[ind])
     print('max--recall',recall_list[ind])
     print('max--F',F_list[ind])
-    return iou_max,cnt,ind
+    """
+    return iou,cnt
 
 def main():
     parser = argparse.ArgumentParser()
@@ -212,7 +199,8 @@ def main():
 
 
     print("***************************")
-    valid_dataset = LoadDataset(r"C:\Users\aki\Documents\GitHub\deep\semantic_seg\evaluate_variety_dem_loc.csv")
+    #valid_dataset = LoadDataset(r"C:\Users\aki\Documents\GitHub\deep\semantic_seg\evaluate_variety_dem_loc.csv")
+    valid_dataset = LoadDataset(r"C:\Users\aki\Documents\GitHub\deep\semantic_seg\master_evaluation.csv")
     valid_iter = DataLoader(valid_dataset, batch_size=args.batch, shuffle=False)
    
 
@@ -221,25 +209,25 @@ def main():
         
     #******ネットワークを選択******
     model = ConvAutoencoder().to(device)                           
-    model_path = "0-5deg_simple(7680)/models_state_dict_end.pth"
+    #model_path = "0-5deg_simple(7680)/models_state_dict_end.pth"
+    model_path = "0-3deg_simple(7680)_lidar_noised_boulder/models_state_dict_end.pth"
     model.load_state_dict(torch.load(model_path))
     print("load model")
 
     ####　必ず確認！
-    data_id = 4
+    data_id = 3
 
     for i,(labels, kyorigazou, name) in enumerate(valid_iter, 0):
-        if i== 19: #1-4 5-8 9-12 13-16
-            break
-        else:
-            
 
-            print('======i=======',i)
-            inputs_ = kyorigazou
-            label_ = labels
-            inputs_ = inputs_.to(device)
-            label_ = label_.to(device)
-            pred = model(inputs_)
+
+        print('======i=======',i)
+        inputs_ = kyorigazou
+        label_ = labels
+        inputs_ = inputs_.to(device)
+        label_ = label_.to(device)
+        pred = model(inputs_)
+        if i== 2: #1-4 5-8 9-12 13-16
+            break
 
     print('inputs : ',inputs_.shape)
     print('pred :',pred.shape)
@@ -249,9 +237,9 @@ def main():
     device2 = torch.device('cpu')
     pred = pred.to(device2)
 
-    ave_iou = cal_average_iou(pred, label_)
+    ave_iou = cal_average_iou(pred, label_,batch_size=args.batch)
 # IOU
-    iou,_,max_iou_ind = iou_score(pred, label_, data_id)
+    iou,_ = iou_score(pred, label_, data_id)
 
     pred = pred.detach().clone().numpy()
     inputs_ = inputs_.to(device2)
@@ -271,16 +259,19 @@ def main():
     os.mkdir(new_dir_path)
     print("mkdir !")
     
-    
+    input_max = np.amax(input)
+    input_min = np.amin(input)
+    print('max:',input_max)
+    print('min:',input_min)
     fig = plt.figure()
     ax1 = fig.add_subplot(111) 
     #ax.set_title('input')
     ax1.set_xlabel('x[pix]')
     ax1.set_ylabel('y[pix]')
     az = ax1.imshow(input,cmap=cm.winter)
-    cbar = fig.colorbar(az,ticks=[0, 0.5, 1]) #, label='z[m]'
-    cbar.ax.set_ylim(0,1)  
-    cbar.ax.set_yticklabels(['Low', 'Medium', 'High']) 
+    cbar = fig.colorbar(az,ticks=[input_min, (input_max+input_min)/2, input_max]) #, label='z[m]'
+    #cbar.ax.set_ylim(0,1)  
+    cbar.ax.set_yticklabels([input_max, (input_max+input_min)/2, input_min ]) 
     plt.savefig(str(new_dir_path)+"/DEM.png")
 
     fig = plt.figure()
@@ -297,14 +288,12 @@ def main():
     ax3 = fig.add_subplot(143)
     ax3.set_title('output')    
     ax3.imshow(pred,cmap=cm.jet)
-    
-    max_iou_ind = max_iou_ind/10
-    print("max_iou_ind",max_iou_ind)
+
     ax4 = fig.add_subplot(144)
     ax4.set_title('output_threshold')   
     ax4.set_xlabel('x[pix]')
     ax4.set_ylabel('y[pix]')
-    pred_threshold = np.where(pred>max_iou_ind,1,0)
+    pred_threshold = np.where(pred>0.4,1,0)
     ax4.imshow(pred_threshold,cmap=cm.gray)
 
     plt.tight_layout()
@@ -324,7 +313,7 @@ def main():
     ax.set_title('output_threshold')   
     ax.set_xlabel('x[pix]')
     ax.set_ylabel('y[pix]')
-    pred_threshold = np.where(pred>max_iou_ind,1,0)
+    pred_threshold = np.where(pred>0.4,1,0)
     ax.imshow(pred_threshold,cmap=cm.gray)
     plt.savefig(str(new_dir_path)+"/max_thresholding_image.png")
 
