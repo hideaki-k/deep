@@ -21,6 +21,7 @@ import argparse
 import cv2
 from sklearn.metrics import roc_curve, auc
 
+
 class LoadDataset(torch.utils.data.Dataset):
     def __init__(self, csv_file, num_time):
         self.num_time = num_time
@@ -35,7 +36,7 @@ class LoadDataset(torch.utils.data.Dataset):
         image = scipy.io.loadmat(self.df['id'][i])
         label = scipy.io.loadmat(self.df['label'][i])
         kyorigazou = cv2.imread(self.df['kyorigazou'][i])
-
+        
         image = image['time_data']
         label = label['label_data']
         #print("image : ",image.shape)
@@ -48,6 +49,7 @@ class LoadDataset(torch.utils.data.Dataset):
         label = label.reshape(4096)
         label = label.astype(np.float32)
         return image, label, kyorigazou, name
+
 def cal_average_iou(outputs, labels, num_time, batch_size):
 
     outputs = outputs.data.cpu().numpy() #outputs.shape: (128, 1, 64, 64)
@@ -56,37 +58,29 @@ def cal_average_iou(outputs, labels, num_time, batch_size):
     labels = labels.reshape(labels.shape[0],64,64)
     average_iou = 0
     average_recall = 0
+    average_precision = 0
     average_F = 0
     for i in range(batch_size):
-        iou_list = []
-        precision_list = []
-        recall_list = []
-        F_list = []
-        for j in range(0,num_time,1):
-            output = np.where(outputs[i]>j,1,0)
-            label = np.where(labels[i]>0,1,0)
-            intersection = (np.uint64(output) & np.uint64(label)).sum((0,1)) # will be zero if Trueth=0 or Prediction=0
-            union = (np.uint64(output) | np.uint64(label)).sum((0,1)) # will be zero if both are 0
-            smooth = 1e-6
 
-            precision = (intersection / np.uint64(output).sum((0,1)))
-            recall = (intersection / np.uint64(label).sum((0,1)))
-            iou = ((intersection + smooth) / (union + smooth))
-            F_score = 2*(precision*recall)/(recall+precision)
-            F_score = round(F_score,5)
-            iou = round(iou,5)
-            precision = round(precision,5)
-            recall = round(recall,5)
-            iou_list.append(iou)
-            precision_list.append(precision)
-            recall_list.append(recall)
-            F_list.append(F_score)
+        output = np.where(outputs[i]>=5,1,0)
+        label = np.where(labels[i]>0,1,0)
+        intersection = (np.uint64(output) & np.uint64(label)).sum((0,1)) # will be zero if Trueth=0 or Prediction=0
+        union = (np.uint64(output) | np.uint64(label)).sum((0,1)) # will be zero if both are 0
+        smooth = 1e-6
 
-        ind_iou = max(iou_list)
-        average_iou += ind_iou
-        ind = iou_list.index(ind_iou)
-        average_recall += recall_list[ind]
-        average_F += F_list[ind]
+        precision = (intersection / np.uint64(output).sum((0,1)))
+        recall = (intersection / np.uint64(label).sum((0,1)))
+        iou = ((intersection + smooth) / (union + smooth))
+        F_score = 2*(precision*recall)/(recall+precision)
+        F_score = round(F_score,5)
+        iou = round(iou,5)
+        precision = round(precision,5)
+        recall = round(recall,5)
+        average_iou += iou
+        average_precision += precision
+        average_recall += recall
+
+
     print('average_iou is : ',average_iou/batch_size) 
     print('average_recall is ',average_recall/batch_size) 
     print('average_F is : ',average_F/batch_size)
@@ -111,10 +105,11 @@ def iou_score(outputs, labels, data_id, num_time):
     F_list = []
     
     for j in range(0,num_time,1):
-        # TP = intersection
-        # TP + FN = label
-        # TP + FP = output
-        # FP + TN = 4096-label
+    # TP = intersection
+    # TP + FN = label
+    # TP + FP = output
+    # FP + TN = 4096-label
+   
         output = np.where(outputs[data_id]>j,1,0)
         label = np.where(labels[data_id]>0,1,0)
         intersection = (np.uint64(output) & np.uint64(label)).sum((0,1)) # will be zero if Trueth=0 or Prediction=0
@@ -142,19 +137,31 @@ def iou_score(outputs, labels, data_id, num_time):
     print('F_list',F_list)
     print('precision',precision_list)
     print('recall',recall_list)
-    iou_max = max(iou_list)
-    ind = iou_list.index(iou_max)
-    print('max--iou',max(iou_list))
-    print('max--precision',precision_list[ind])
-    print('max--recall',recall_list[ind])
-    print('max--F',F_list[ind])
+
+    # const_threshold iouのマックスのj（最終層スパイク数)を固定
+    const_threshold = 1
+    const_val = 4
+    if const_threshold:
+        iou_max = iou_list[const_val]
+        ind = const_val
+        print('5--iou',iou_list[const_val])
+        print('5--precision',precision_list[const_val])
+        print('5--recall',recall_list[const_val] )
+        print('5--F',F_list[const_val])
+    else:
+        iou_max = max(iou_list)
+        ind = iou_list.index(iou_max)
+        print('max--iou',max(iou_list))
+        print('max--precision',precision_list[ind])
+        print('max--recall',recall_list[ind])
+        print('max--F',F_list[ind])
 
     return iou_max,  cnt, ind
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch', '-b', type=int, default=32)
 parser.add_argument('--epoch', '-e', type=int, default=50)
-parser.add_argument('--time', '-t', type=int, default=21,
+parser.add_argument('--time', '-t', type=int, default=11,
                         help='Total simulation time steps.')
 parser.add_argument('--rec', '-r', type=str, default=False)     
 parser.add_argument('--forget', '-f', action='store_true' ,default=False)   
@@ -175,11 +182,11 @@ print(model.state_dict().keys())
 #model_path = "models/recursive_tof_input(16deg)/models_state_dict_end.pth"
 #model_path = "models/InputGated_recursive_tof(16deg)/models_state_dict_end.pth" 
 #model_path = "models/dualGated_recurrent_tof(16deg)/models_state_dict_end.pth" # -d
-model_path = "models/ists/0-5deg_rSNU/models_state_dict_end.pth"
+model_path = "models/master_thethis/0-3deg_rsnu(t-10)_lidar_noised_boulder/models_state_dict_end.pth"
 #model_path = "models/ists/0deg_rSNU/models_state_dict_end.pth"
 model.load_state_dict(torch.load(model_path))
 print("load model")
-#summary(model)
+summary(model)
 
 ####　必ず確認！
 data_id = 3
@@ -187,16 +194,17 @@ num_time = args.time
 
 # test_img : 評価用画像生成
 # inputs_, label_ = test_img() 
-#valid_dataset = LoadDataset("semantic_eval_loc.csv")
-valid_dataset = LoadDataset("evaluate_1124.csv", num_time)
+
+valid_dataset = LoadDataset("master_evaluation.csv", num_time)
+#valid_dataset = LoadDataset("semantic_eval_loc.csv", num_time)
+#valid_dataset = LoadDataset("evaluate_1124.csv", num_time)
 #valid_dataset = LoadDataset("evaluate_variety_dem_loc.csv", num_time)
 valid_iter = DataLoader(valid_dataset, batch_size=args.batch, shuffle=False)
 for i,(inputs, labels, kyorigazou, name) in enumerate(valid_iter, 0):
    #1-4 5-8 9-12 13-16 17-20(batch=32)
    #1-16 17-33 34-50 51-67 68-84(batch=8)
-    if i== 1: 
-        break
-    else:
+
+    
         print('======i=======',i)
         inputs_ = inputs
         label_ = labels
@@ -214,7 +222,8 @@ for i,(inputs, labels, kyorigazou, name) in enumerate(valid_iter, 0):
             print('TOTAL SPIKE :',sum(spike_count))
         else:
             _, pred, result, _, _ = model(inputs_, label_)
-
+        if i== 2: 
+            break
 
 #for data_id in range(args.batch):
     #print('name is :',name[data_id])

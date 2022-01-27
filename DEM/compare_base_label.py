@@ -49,6 +49,8 @@ def iou_score(outputs, labels):
 
 for file_num in range(367,1000): #14593,14594,1
 
+
+
     # ベースラベル読み込み
     add_path = 'label_'+str(file_num)+'.mat' 
     read_path = os.path.join(base_label_path,add_path)
@@ -185,6 +187,7 @@ for file_num in range(367,1000): #14593,14594,1
     filename = target_DEM_path +'alhat_simple_ioudata.csv'
     with open(filename, 'a', newline='') as f:
         writer = csv.writer(f)
+
         writer.writerow([save_path,str(iou),str(precision),str(recall)])
 
     if iou_survey:

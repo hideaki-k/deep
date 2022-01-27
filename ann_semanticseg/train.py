@@ -156,11 +156,13 @@ def main():
     loss_fn = nn.MSELoss()                                #損失関数の定義
     optimizer = optim.Adam(net.parameters(), lr = 1e-4)
     acces = []
+    eval_acces = []
     losses = []                                     #epoch毎のlossを記録
-    epoch_time = 50
+    epoch_time = 100
     for epoch in range(epoch_time):
         running_loss = 0.0 
-        running_iou = 0.0                         #epoch毎のlossの計算
+        running_iou = 0.0    
+        eval_running_iou = 0.0                     #epoch毎のlossの計算
         net.train()
         if epoch == 0:
             torch.save(net.state_dict(), "models_state_dict_"+str(epoch)+"epochs.pth")
@@ -190,6 +192,17 @@ def main():
         losses.append(running_loss/(i + 1))
         acces.append(running_iou/(i+1))
 
+        with torch.no_grad():
+            for i,(inputs, labels, name) in enumerate(test_iter, 0):
+                inputs = inputs.to(device)
+                labels = labels.to(device)
+                y_pred = net(inputs)
+                labels = labels.reshape((len(labels), 1, 64, 64))
+                #### IOU
+                iou,cnt= iou_score(y_pred, labels)
+                eval_running_iou += iou
+            eval_acces.append(eval_running_iou/(i+1))
+
     print(name[data_id])
     # ログファイル二セーブ
     path_w = 'train_dataset_log.txt'
@@ -199,8 +212,9 @@ def main():
     #lossの可視化
     
     fig = plt.figure(facecolor='oldlace')
-    ax1 = fig.add_subplot(1,2,1)
-    ax2 = fig.add_subplot(1,2,2)
+    ax1 = fig.add_subplot(1,3,1)
+    ax2 = fig.add_subplot(1,3,2)
+    ax3 = fig.add_subplot(1,3,3)
 
     ax1.plot(losses)
     ax1.set_ylabel("loss")
@@ -209,6 +223,11 @@ def main():
     ax2.plot(acces)
     ax2.set_ylabel("IOU")
     ax2.set_xlabel("epoch time")
+
+    ax3.plot(eval_acces)
+    ax3.set_ylabel("eval_iou")
+    ax3.set_xlabel("epoch time")
+    
     plt.savefig("loss_iou")
     plt.show()
     torch.save(net.state_dict(), "models_state_dict_end.pth")
