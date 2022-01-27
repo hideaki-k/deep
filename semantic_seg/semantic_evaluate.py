@@ -83,7 +83,7 @@ def cal_average_iou(outputs, labels, num_time, batch_size):
 
     print('average_iou is : ',average_iou/batch_size) 
     print('average_recall is ',average_recall/batch_size) 
-    print('average_F is : ',average_F/batch_size)
+    print('average_precision is : ',average_precision/batch_size)
     return average_iou/batch_size
 
 def iou_score(outputs, labels, data_id, num_time):
@@ -222,7 +222,7 @@ for i,(inputs, labels, kyorigazou, name) in enumerate(valid_iter, 0):
             print('TOTAL SPIKE :',sum(spike_count))
         else:
             _, pred, result, _, _ = model(inputs_, label_)
-        if i== 2: 
+        if i== 14: 
             break
 
 #for data_id in range(args.batch):

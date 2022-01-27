@@ -142,7 +142,7 @@ def cal_average_iou(outputs, labels, batch_size):
 
     print('average_iou is : ',average_iou/batch_size) 
     print('average_recall is ',average_recall/batch_size) 
-    print('average_F is : ',average_F/batch_size)  
+    print('average_precision is : ',average_precision/batch_size)  
     return average_iou/batch_size
 
 def iou_score(outputs, labels, data_id):
@@ -226,7 +226,7 @@ def main():
         inputs_ = inputs_.to(device)
         label_ = label_.to(device)
         pred = model(inputs_)
-        if i== 2: #1-4 5-8 9-12 13-16
+        if i== 6: #1-4 5-8 9-12 13-16
             break
 
     print('inputs : ',inputs_.shape)
@@ -326,6 +326,14 @@ def main():
     OUT_FILE_NAME_ = str(new_dir_path)+"/error_image.png"
     plt.savefig(OUT_FILE_NAME_)
 
+    path = str(new_dir_path)+"/iou"+'.txt'
+    path = path.replace('.mat','_')
+    path = path.replace('\\','_')
+    f = open(path,'w')
+    f.write(str(iou))
+    f.write('\n')
+    f.write(str(name[data_id]))
+    f.close()
 
 
 if __name__ == '__main__':
