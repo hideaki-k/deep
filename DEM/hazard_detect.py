@@ -176,6 +176,7 @@ def Get_Roughness(cropped):
 #x_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
 #y_ary = np.array([range(i,i+8) for i in [0,1,2,3,4,5,6,7]])
 if __name__ == '__main__':
+    #new_dir_path = r'G:\マイドライブ\DEM\64pix_dem(lidar_noisy)_boulder_evaluate\model\simple_label'
     new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)_boulder\simple_label'
     #new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)\simple_label'
     #new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate_112/simple_label'
@@ -186,6 +187,7 @@ if __name__ == '__main__':
     #new_dir_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate/simple_label'
     #new_dir_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem(noisy)_evaluate\simple_label_quantum'
     os.makedirs(new_dir_path, exist_ok=True)
+    #original_DEM_path = r'G:\マイドライブ\DEM\64pix_dem(lidar_noisy)_boulder_evaluate\model'
     original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)_boulder\model'
     #original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)\model(t-10)'
     #original_DEM_path = r'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0deg)_dem(noisy)_evaluate_112\noise_0\model'
@@ -217,7 +219,7 @@ if __name__ == '__main__':
     width = rei.shape[1]
     # ウィンドウ大きさ
     F = 5
-    for file_num in range(20000):
+    for file_num in range(205,20000):
         if lidar_noised:
             add_path_ = 'lidar_noised_model_'+str(file_num)+'.mat'
             read_path_ = os.path.join(original_DEM_path,add_path_)
@@ -242,8 +244,9 @@ if __name__ == '__main__':
         sigma = np.std(DEM)
 
         scale = 1.0
-    
-        rotate_list = [0.0,30.0,60.0,90.0,120.0,150.0,180.0]
+
+        #rotate_list = [0.0] # simple label 適用時
+        rotate_list = [0.0,30.0,60.0,90.0,120.0,150.0,180.0]# ALHAT 適用時
         #rotate_list = [0.0,90.0,180.0,270.0,360.0]
 
         V = np.zeros((height,width)) # safety for each pixel
@@ -318,7 +321,8 @@ if __name__ == '__main__':
         '''
         #print("max S",np.max(S))
         #print("max R",np.max(R))
-        S = S>0.98
+        #S = S>0.98
+        S = S>0.6
         R = R>0.1
 
         hazard = (S|R)

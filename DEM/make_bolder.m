@@ -63,7 +63,7 @@ function f = make_crater(k,mode)
     lidar_data = zeros(size_factor,size_factor);
     time_data = zeros(size_factor,size_factor,20); % 128 128 20 
 
-    for i =  10:-1:-10
+    for i =  10:-1:-9
         time = time + 1;
         lidar_data(model==i) = 1;
         time_data(:,:,time) = lidar_data;

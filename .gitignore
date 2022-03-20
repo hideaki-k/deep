@@ -50,3 +50,10 @@ semantic_seg/image_loc.csv
 semantic_seg/image_loc.csv
 DEM/64pix_(0deg)_dem(noisy)/hazard_label/label_10
 DEM/64pix_(0deg)_dem(noisy)/hazard_label/label_1000
+DEM/64pix_(0deg)_dem(noisy)/hazard_label/label_0
+DEM/64pix_(0deg)_dem(noisy)/hazard_label/label_23
+DEM/hazard_detect.m
+*.zip
+*.json
+semantic_seg/image_loc.csv
+*.csv

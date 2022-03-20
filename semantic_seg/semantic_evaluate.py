@@ -20,7 +20,7 @@ from torchsummary import summary
 import argparse
 import cv2
 from sklearn.metrics import roc_curve, auc
-
+import csv
 
 class LoadDataset(torch.utils.data.Dataset):
     def __init__(self, csv_file, num_time):
@@ -32,7 +32,8 @@ class LoadDataset(torch.utils.data.Dataset):
         return len(self.df)
 
     def __getitem__(self, i):
-        name = self.df['id'][i]
+        image_name = self.df['id'][i]
+        label_name = self.df['label'][i]
         image = scipy.io.loadmat(self.df['id'][i])
         label = scipy.io.loadmat(self.df['label'][i])
         kyorigazou = cv2.imread(self.df['kyorigazou'][i])
@@ -48,7 +49,7 @@ class LoadDataset(torch.utils.data.Dataset):
         #label = torch.tensor(label,dtype =torch.int64 )
         label = label.reshape(4096)
         label = label.astype(np.float32)
-        return image, label, kyorigazou, name
+        return image, label, kyorigazou, image_name, label_name
 
 def cal_average_iou(outputs, labels, num_time, batch_size):
 
@@ -84,7 +85,7 @@ def cal_average_iou(outputs, labels, num_time, batch_size):
     print('average_iou is : ',average_iou/batch_size) 
     print('average_recall is ',average_recall/batch_size) 
     print('average_precision is : ',average_precision/batch_size)
-    return average_iou/batch_size
+    return average_iou/batch_size, average_precision/batch_size, average_recall/batch_size
 
 def iou_score(outputs, labels, data_id, num_time):
     smooth = 1e-6
@@ -182,15 +183,20 @@ print(model.state_dict().keys())
 #model_path = "models/recursive_tof_input(16deg)/models_state_dict_end.pth"
 #model_path = "models/InputGated_recursive_tof(16deg)/models_state_dict_end.pth" 
 #model_path = "models/dualGated_recurrent_tof(16deg)/models_state_dict_end.pth" # -d
-model_path = "models/master_thethis/0-3deg_rsnu(t-10)_lidar_noised_boulder/models_state_dict_end.pth"
+if args.dual:
+    model_path = "models/master_thethis/0-3deg_rsnu(t-10)_lidar_noised_boulder/models_state_dict_end.pth"
+else:
+    model_path = "models/master_thethis/0-3deg_snu(t-10)_lidar_noised_boulder/models_state_dict_end.pth"
 #model_path = "models/ists/0deg_rSNU/models_state_dict_end.pth"
 model.load_state_dict(torch.load(model_path))
 print("load model")
 summary(model)
 
 ####　必ず確認！
-data_id = 3
+data_id = 9
 num_time = args.time
+# パラメータ書き込み
+iou_log_csv = 0
 
 # test_img : 評価用画像生成
 # inputs_, label_ = test_img() 
@@ -200,11 +206,9 @@ valid_dataset = LoadDataset("master_evaluation.csv", num_time)
 #valid_dataset = LoadDataset("evaluate_1124.csv", num_time)
 #valid_dataset = LoadDataset("evaluate_variety_dem_loc.csv", num_time)
 valid_iter = DataLoader(valid_dataset, batch_size=args.batch, shuffle=False)
-for i,(inputs, labels, kyorigazou, name) in enumerate(valid_iter, 0):
+for i,(inputs, labels, kyorigazou, name, label_name) in enumerate(valid_iter, 0):
    #1-4 5-8 9-12 13-16 17-20(batch=32)
    #1-16 17-33 34-50 51-67 68-84(batch=8)
-
-    
         print('======i=======',i)
         inputs_ = inputs
         label_ = labels
@@ -222,16 +226,25 @@ for i,(inputs, labels, kyorigazou, name) in enumerate(valid_iter, 0):
             print('TOTAL SPIKE :',sum(spike_count))
         else:
             _, pred, result, _, _ = model(inputs_, label_)
-        if i== 14: 
+        
+        if iou_log_csv:
+            ave_iou,ave_precision,ave_recall = cal_average_iou(pred, label_, num_time=num_time, batch_size=args.batch)
+            with open('log_all_parameters.csv', 'a', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow([str(i),str(ave_iou),str(ave_precision),str(ave_recall)])
+
+
+        elif i== 9: 
             break
 
 #for data_id in range(args.batch):
     #print('name is :',name[data_id])
     # IOU
-ave_iou = cal_average_iou(pred, label_, num_time=num_time, batch_size=args.batch)
+ave_iou,_,_ = cal_average_iou(pred, label_, num_time=num_time, batch_size=args.batch)
 iou,_,max_iou_ind = iou_score(pred, label_, data_id, num_time=num_time)
 iou = str(iou)
 print('name is :',name[data_id])
+print('label is : ',label_name[data_id])
 device2 = torch.device('cpu')
 result = result.to(device2)
 result = result.detach().clone().numpy()

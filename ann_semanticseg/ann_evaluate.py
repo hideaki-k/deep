@@ -11,7 +11,7 @@ from tqdm import tqdm
 import sys
 import cv2
 import datetime
-
+import csv
 from tqdm import tqdm
 #from mp4_rec import record, rectangle_record
 import pandas as pd
@@ -143,7 +143,8 @@ def cal_average_iou(outputs, labels, batch_size):
     print('average_iou is : ',average_iou/batch_size) 
     print('average_recall is ',average_recall/batch_size) 
     print('average_precision is : ',average_precision/batch_size)  
-    return average_iou/batch_size
+    return average_iou/batch_size, average_precision/batch_size, average_recall/batch_size
+
 
 def iou_score(outputs, labels, data_id):
     smooth = 1e-6
@@ -160,7 +161,7 @@ def iou_score(outputs, labels, data_id):
     precision_list = []
     recall_list = []
     F_list = []
-
+    
 
     output = np.where(outputs[data_id]>=0.5,1,0)
     label = np.where(labels[data_id]>0,1,0)
@@ -215,7 +216,8 @@ def main():
     print("load model")
 
     ####　必ず確認！
-    data_id = 3
+    data_id = 9
+    iou_log_csv = 1
 
     for i,(labels, kyorigazou, name) in enumerate(valid_iter, 0):
 
@@ -226,7 +228,15 @@ def main():
         inputs_ = inputs_.to(device)
         label_ = label_.to(device)
         pred = model(inputs_)
-        if i== 6: #1-4 5-8 9-12 13-16
+        
+        if iou_log_csv:
+            ave_iou,ave_precision,ave_recall = cal_average_iou(pred, label_,  batch_size=args.batch)
+            with open('log_all_parameters.csv', 'a', newline='') as f:
+                writer = csv.writer(f)
+                writer.writerow([str(i),str(ave_iou),str(ave_precision),str(ave_recall)])
+
+
+        elif i== 4: 
             break
 
     print('inputs : ',inputs_.shape)
@@ -237,7 +247,7 @@ def main():
     device2 = torch.device('cpu')
     pred = pred.to(device2)
 
-    ave_iou = cal_average_iou(pred, label_,batch_size=args.batch)
+    ave_iou,_,_ = cal_average_iou(pred, label_,batch_size=args.batch)
 # IOU
     iou,_ = iou_score(pred, label_, data_id)
 
@@ -255,7 +265,7 @@ def main():
 
 
     now = datetime.datetime.now()
-    new_dir_path = 'log/'+now.strftime('%Y%m%d_%H%M%S')
+    new_dir_path = 'G:/マイドライブ/DEM/ann_log/'+now.strftime('%Y%m%d_%H%M%S')
     os.mkdir(new_dir_path)
     print("mkdir !")
     
@@ -293,7 +303,7 @@ def main():
     ax4.set_title('output_threshold')   
     ax4.set_xlabel('x[pix]')
     ax4.set_ylabel('y[pix]')
-    pred_threshold = np.where(pred>0.4,1,0)
+    pred_threshold = np.where(pred>=0.5,1,0)
     ax4.imshow(pred_threshold,cmap=cm.gray)
 
     plt.tight_layout()
@@ -313,9 +323,9 @@ def main():
     ax.set_title('output_threshold')   
     ax.set_xlabel('x[pix]')
     ax.set_ylabel('y[pix]')
-    pred_threshold = np.where(pred>0.4,1,0)
+    pred_threshold = np.where(pred>=0.5,1,0)
     ax.imshow(pred_threshold,cmap=cm.gray)
-    plt.savefig(str(new_dir_path)+"/max_thresholding_image.png")
+    plt.savefig(str(new_dir_path)+"/thresholding_image.png")
 
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)

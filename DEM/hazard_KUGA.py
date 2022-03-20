@@ -48,7 +48,10 @@ S = np.zeros((height,width)) # slope for each pixel
 R = np.zeros((height,width)) # roughness for each pixel
 
 
-for file_num in range(7680):
+for file_num in range(10000,
+
+
+16640):
     #original_DEM_path = r'C:/Users/aki/Documents/GitHub/deep/DEM/64pix_(0deg)_dem/model/'
     add_path = 'observed_model_'+str(file_num)+'.mat'
     file = os.path.join(original_DEM_path,add_path)

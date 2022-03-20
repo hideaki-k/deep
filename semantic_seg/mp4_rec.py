@@ -15,7 +15,7 @@ from scipy.stats import gaussian_kde
 # rectangle_record ・・学習データ可視化関数
 # record ・・　出力データ可視化関数
 now = datetime.datetime.now()
-new_dir_path = 'log/'+now.strftime('%Y%m%d_%H%M%S')
+new_dir_path = 'G:/マイドライブ/DEM/snn_log/'+now.strftime('%Y%m%d_%H%M%S')
 os.mkdir(new_dir_path)
 print("mkdir !")
 
@@ -45,6 +45,7 @@ def rectangle_record(x,num_time=20,data_id=2):
         plt.clf()
         
         plt.imshow(img,cmap='gray')
+        plt.savefig(str(new_dir_path)+"/inputs_"+str(i)+"_.jpg")
     ani = animation.FuncAnimation(fig, update, np.arange(1,  N), interval=1)  # 代入しないと消される
 
     ani.save(str(new_dir_path)+"/inputs.gif", writer="pillow", fps=10)
@@ -77,6 +78,7 @@ def record(x,num_time=20,data_id=2): # x : output
         plt.clf()
         
         plt.imshow(img,cmap='gray')
+        #plt.savefig(str(new_dir_path)+"/inputs_"+str(i)+"_.jpg")
     ani = animation.FuncAnimation(fig, update, np.arange(1,  N), interval=1)  # 代入しないと消される
 
     ani.save(str(new_dir_path)+"/outputs.gif", writer="pillow", fps=10)
@@ -94,11 +96,11 @@ def heatmap(x,kyorigazou,num_time=20,data_id=2,label_img=None, iou=0,max_iou_ind
     fig = plt.figure()
     print("max_iou_ind",max_iou_ind)
     ax = fig.add_subplot(111)
-    pred_threshold = np.where(sum_x > max_iou_ind, 1, 0)
+    pred_threshold = np.where(sum_x > 4, 1, 0)
     ax.set_xlabel('x[pix]')
     ax.set_ylabel('y[pix]')
     ax.imshow(pred_threshold,cmap=cm.gray)
-    plt.savefig(str(new_dir_path)+"/max_thresholding_image.png")
+    plt.savefig(str(new_dir_path)+"/thresholding_image.png")
 
     fig = plt.figure()
     ax = fig.add_subplot(111)

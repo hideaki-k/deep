@@ -37,7 +37,7 @@ class LoadDataset(torch.utils.data.Dataset):
         label = label['label_data']
         #print("image : ",image.shape)
         #image = image.reshape(4096,20)
-        image = image.reshape(4096,11)
+        image = image.reshape(4096,101)
       
         #print("image : ",image.shape)
         image = image.astype(np.float32)
@@ -50,7 +50,7 @@ class LoadDataset(torch.utils.data.Dataset):
 parser = argparse.ArgumentParser()
 parser.add_argument('--batch', '-b', type=int, default=32)
 parser.add_argument('--epoch', '-e', type=int, default=100)
-parser.add_argument('--time', '-t', type=int, default=11,
+parser.add_argument('--time', '-t', type=int, default=101,
                         help='Total simulation time steps.')
 parser.add_argument('--rec', '-r', action='store_true' ,default=False)  # -r付けるとTrue                  
 

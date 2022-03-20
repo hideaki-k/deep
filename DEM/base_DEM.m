@@ -43,7 +43,7 @@ function f=base_DEM(k,mode,pix,angle,folder_name,is_noise)
     end
     
     %% set parameter
-    R = 10 + 3*randn(1); %クレータ半径
+    R = 7 + 3*randn(1); %クレータ半径
     % H_r = 150 + abs(5*randn())
     H_ro = 0.036*(2*R)^1.014;
     H_r = H_ro;
@@ -88,17 +88,17 @@ function f=base_DEM(k,mode,pix,angle,folder_name,is_noise)
         for j = 1:1:size_factor
             
             %% ボルダー 追加
-%             if j > yc
-%                 if j < yc + yr*sqrt(1-(i-xc)^2/xr^2)
-%                     z = generate_ellipsoid(i,j,xc, yc, zc, xr, yr, zr);
-%                     model(i,j) = z + H(i,j);
-%                 end
-%             else
-%                 if j > yc - yr*sqrt(1-(i-xc)^2/xr^2)
-%                     z = generate_ellipsoid(i,j,xc, yc, zc, xr, yr, zr);
-%                     model(i,j) = z+H(i,j) ;
-%                 end
-%             end
+            if j > yc
+                if j < yc + yr*sqrt(1-(i-xc)^2/xr^2)
+                    z = generate_ellipsoid(i,j,xc, yc, zc, xr, yr, zr);
+                    model(i,j) = z + H(i,j);
+                end
+            else
+                if j > yc - yr*sqrt(1-(i-xc)^2/xr^2)
+                    z = generate_ellipsoid(i,j,xc, yc, zc, xr, yr, zr);
+                    model(i,j) = z + H(i,j) ;
+                end
+            end
             %% クレータ　追加
             % y = wgn(1,1,-3);
              r = sqrt(abs(i-x_center)^2 + abs(j-y_center)^2);
@@ -224,6 +224,7 @@ function f=base_DEM(k,mode,pix,angle,folder_name,is_noise)
         kyorigazou = mat2gray(model);
         filename = folder_name+"/model/model_"+filenum+'.png';
         imwrite(kyorigazou,filename);
+
         
         filename = folder_name+"/label/label_"+filenum;
         save(filename,'label_data');

@@ -1,6 +1,6 @@
 % mode  0:保存 1:ビデオ保存 2:三次元プロット 
-addpath 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)\model'
-folder_name = 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)';
+addpath 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)_boulder\model'
+folder_name = 'C:\Users\aki\Documents\GitHub\deep\DEM\64pix_(0-3deg)_dem(lidar_noisy)_boulder';
 mode = 0;
 size_factor = 64;
 time_scale = 10;
@@ -80,7 +80,7 @@ for i=0:1:16640
         save(filename,'DEM');
         
         kyorigazou = mat2gray(DEM);
-        filename = folder_name+"/model(t-"+time_scale+")/model_"+filenum+'.png';
+        filename = folder_name+"/model(t-"+time_scale+")/observed_model_"+filenum+'.png';
         imwrite(kyorigazou,filename)
         
     end

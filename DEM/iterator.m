@@ -35,7 +35,7 @@ elseif is_noise
         folder_name = string(pix)+"pix_(0-"+string(angle)+"deg)_dem(lidar_noisy)_boulder"; % 1/17
     end
 else
-    %folder_name = string(pix)+"pix_("+string(angle)+"deg)_dem_ver2";
+    %folder_name = string(pihx)+"pix_("+string(angle)+"deg)_dem_ver2";
 end
 mkdir(folder_name)
 mkdir(folder_name,'image')
@@ -56,6 +56,7 @@ for i=0:1:16640
        f = fractal_terrain_generation(i,0,pix,angle,folder_name,is_noise,is_boulder);
        
    else
+       angle = 3*rand(1)
        f = fractal_terrain_generation(i,0,pix,angle,folder_name,is_noise,is_boulder);
    end
   
